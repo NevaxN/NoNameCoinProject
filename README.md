@@ -3,6 +3,4 @@ Desenvolver um Sistema Distribuído capaz de simular o processo de validação p
 
 
 #Comandos git
-'''git
-git pull
-'''
+
