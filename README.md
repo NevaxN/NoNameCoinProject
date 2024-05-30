@@ -4,6 +4,8 @@ Desenvolver um Sistema Distribuído capaz de simular o processo de validação p
 # Comandos do git
 
 ```
+git clone url_do_projeto # apenas fazer uma vez para importar o projeto para o seu computador
+git checkout branch_principal # sempre mudar para essa branch quando for mudar os arquivos 
 git pull # trazer as ultimas atualizações do projeto
 git status # verificar se existe algum commit a ser enviado
 git add # adicionar arquivos para serem enviados ao repositório 
