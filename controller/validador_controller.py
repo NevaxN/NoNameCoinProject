@@ -1,22 +1,36 @@
-'''Regras de validação
-1- O remetente deve ter um valor em saldo igual ou maior que o valor da transação, acrescido das
-taxas para a mesma ser válida;(precisa do banco para o valor da transação)
+from datetime import datetime
+from model.validador import Validador
+from model.transacao import Transacao
+from util.status_transacao import *
 
-2- O horário da transação deve ser menor ou igual ao horário atual do sistema e deve ser maior que
-o horário da última transação para ser válida;(precisa do banco para o horário)
-
-3- Caso o remetente tenha feito mais que 100 transações no último minuto, as transações no
-próximo minuto devem ser invalidas;(precisa do banco para o horário)
-
-o Opcional: Aumentar o tempo de recusa, caso o problema persista;
-
-4- Na hora do cadastro o validador recebe uma chave única do seletor. Em toda transação, o validador deve retornar a chave única que recebeu no cadastro. Caso as chaves sejam iguais, a
-transação é concluída, caso contrário, a transação não é concluída; (criar a chave)
-
-5-  Status da Transação (Servem da camada “Validador” para a camada “Seletor”, assim como da
-camada “Seletor” para a camada “Banco”):
-o 1 = Concluída com Sucesso
-o 2 = Não aprovada (erro)
-o 0 = Não executada
-▪ Códigos opcionais podem existir, mas devem ser descritos para implementação
-na camada “Banco”;'''
+class ValidadorController:
+    def __init__(self):
+        self.validador = Validador
+        self.transacao = Transacao
+        
+    def validar_transacao(self):
+        # Regra 1: Verificar saldo
+        if self.validador.saldo_atual < self.transacao.amount + self.transacao.taxa:
+            self.validador.atualizar_status_transacao(STATUS_NAO_APROVADA) # Saldo insuficiente
+            return False
+        
+        # Regra 2: Verificar horário da última transação
+        if self.transacao.timestamp > datetime.now():
+            self.validador.atualizar_status_transacao(STATUS_NAO_APROVADA) # Horário da transação é no futuro
+            return False
+        
+        if self.validador.horario_ultima_trans and self.transacao.timestamp <= self.validador.horario_ultima_trans:
+            self.validador.atualizar_status_transacao(STATUS_NAO_APROVADA) # Horário da transação é menor ou igual ao horário da última transação
+            return False
+        
+        # Regra 3: Verificar número de transações no último minuto
+        if self.validador.quant_flag > 100:
+            self.validador.atualizar_status_transacao(STATUS_NAO_APROVADA) # Mais de 100 transações no último minuto
+            return False
+        
+        # Atualizar status e contador de transações
+        self.validador.atualizar_saldo(-(self.transacao.amount + self.transacao.taxa))
+        self.validador.atualizar_ultima_transacao(self.transacao.timestamp)
+        self.validador.incrementar_total_transacoes()
+        self.validador.atualizar_status_transacao(STATUS_TRANSACAO_CONCLUIDA) # Transação válida
+        
