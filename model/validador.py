@@ -1,5 +1,6 @@
 from datetime import datetime
 from transacao import Transacao
+from util.status_transacao import * 
 
 class Validador:
     def __init__(self, chave_unica):
@@ -7,7 +8,7 @@ class Validador:
         self.horario_ultima_trans = None
         self.total_transacoes = 0
         self.chave_unica = chave_unica
-        self.status_transacao = 0  # 0 = Não executada, 1 = Concluída com Sucesso, 2 = Não aprovada (erro)
+        self.status_transacao = STATUS_NAO_EXECUTADA  # 0 = Não executada, 1 = Concluída com Sucesso, 2 = Não aprovada (erro)
         self.quant_flag = 0
 
     def validar_transacao(self):
