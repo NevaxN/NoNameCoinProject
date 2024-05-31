@@ -7,12 +7,19 @@ import random
 from threading import Timer
 
 # Simulação de banco de dados
-validadores = {}
-transacoes = []
+
 
 class Seletor:
+    def __init__(self):
+        self.validadores = {}
+        #self.transacoes = []
+        self.chave_unica = ''
+        self.valor_taxa = 0.0
+        self.saldo_minimo = 0.0
+        self.saldo_atual = 0.0
 
-    # Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
+
+'''    # Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
     def calcular_percentual(self, moedas, flag):
         base = moedas
         if flag == 1:
@@ -23,13 +30,13 @@ class Seletor:
 
     # Cadastra um novo validador, verificando se já está cadastrado e se possui saldo mínimo
     def cadastrar_validador(self, id_validador, moedas):
-        if id_validador in validadores:
+        if id_validador in self.validadores:
             return {"status": "Validador já cadastrado"}
         
         if moedas < 50:
             return {"status": "Saldo mínimo de 50 NoNameCoins necessário"}
 
-        validadores[id_validador] = {
+        self.validadores[id_validador] = {
             'moedas': moedas,
             'flag': 0,
             'chave_unica': f'chave_{id_validador}_{int(time.time())}',
@@ -38,16 +45,16 @@ class Seletor:
             'em_hold': False,
             'escolhido_count': 0
         }
-        return {"status": "Validador cadastrado com sucesso!", "chave_unica": validadores[id_validador]['chave_unica']}
+        return {"status": "Validador cadastrado com sucesso!", "chave_unica": self.validadores[id_validador]['chave_unica']}
 
     # Lista todos os validadores cadastrados
     def listar_validadores(self):
-        return validadores
+        return self.validadores
 
     # Seleciona validadores para uma transação, respeitando as condições especificadas
     def selecionar_validadores(self, transacao):
-        transacoes.append(transacao)
-        validos = {k: v for k, v in validadores.items() if not v['em_hold'] and not v['expulso']}
+        self.transacoes.append(transacao)
+        validos = {k: v for k, v in self.validadores.items() if not v['em_hold'] and not v['expulso']}
         
         if len(validos) < 3:
             Timer(60, self.selecionar_validadores, args=[transacao]).start()
@@ -59,7 +66,7 @@ class Seletor:
             chance = self.calcular_percentual(dados['moedas'], dados['flag']) / total_moedas
             if random.random() < chance and len(selecoes) < 3:
                 selecoes.append(validador)
-                validadores[validador]['escolhido_count'] += 1
+                self.validadores[validador]['escolhido_count'] += 1
                 if len(selecoes) == 3:
                     break
 
@@ -68,9 +75,9 @@ class Seletor:
             return {"status": "Não foi possível selecionar 3 validadores, transação em espera"}
 
         for validador in selecoes:
-            if validadores[validador]['escolhido_count'] >= 5:
-                validadores[validador]['em_hold'] = True
-                validadores[validador]['escolhido_count'] = 0
+            if self.validadores[validador]['escolhido_count'] >= 5:
+                self.validadores[validador]['em_hold'] = True
+                self.validadores[validador]['escolhido_count'] = 0
 
         return {"validadores_selecionados": selecoes}
 
@@ -81,9 +88,10 @@ class Seletor:
 
     # Adiciona uma flag ao validador e verifica se ele deve ser expulso
     def adicionar_flag(self, id_validador):
-        if id_validador in validadores:
-            validadores[id_validador]['flag'] += 1
-            if validadores[id_validador]['flag'] > 2:
-                validadores[id_validador]['expulso'] = True
+        if id_validador in self.validadores:
+            self.validadores[id_validador]['flag'] += 1
+            if self.validadores[id_validador]['flag'] > 2:
+                self.validadores[id_validador]['expulso'] = True
             return {"status": "Flag adicionada com sucesso"}
         return {"status": "Validador não encontrado"}
+'''
