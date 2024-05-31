@@ -28,3 +28,66 @@ NoNameCoins;
 9- Para cada validação bem sucedida o seletor recebera 1,5% da quantidade de NoNameCoins
 transacionadas, ficando 0,5% travado para o validador e o restante distribuído igualitariamente
 entre os validadores;'''
+from flask import Blueprint, request, jsonify
+from model.seletor import Seletor
+
+# Criação do blueprint do Flask
+seletor_bp = Blueprint('seletor_bp', __name__)
+
+# Inicialização do objeto Seletor
+seletor = Seletor()
+
+# Rota para cadastrar um validador
+@seletor_bp.route('/cadastrar_validador', methods=['POST'])
+def cadastrar_validador():
+    data = request.get_json()
+    id_validador = data.get('id_validador')
+    moedas = data.get('moedas')
+
+    if not id_validador or moedas is None:
+        return jsonify({"status": "Erro", "mensagem": "Dados incompletos"}), 400
+
+    resultado = seletor.cadastrar_validador(id_validador, moedas)
+    return jsonify(resultado)
+
+# Rota para listar validadores
+@seletor_bp.route('/listar_validadores', methods=['GET'])
+def listar_validadores():
+    resultado = seletor.listar_validadores()
+    return jsonify(resultado)
+
+# Rota para adicionar flag a um validador
+@seletor_bp.route('/adicionar_flag', methods=['POST'])
+def adicionar_flag():
+    data = request.get_json()
+    id_validador = data.get('id_validador')
+
+    if not id_validador:
+        return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
+
+    resultado = seletor.adicionar_flag(id_validador)
+    return jsonify(resultado)
+
+# Rota para expulsar um validador
+@seletor_bp.route('/expulsar_validador', methods=['POST'])
+def expulsar_validador():
+    data = request.get_json()
+    id_validador = data.get('id_validador')
+
+    if not id_validador:
+        return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
+
+    resultado = seletor.expulsar_validador(id_validador)
+    return jsonify(resultado)
+
+# Rota para selecionar validadores
+@seletor_bp.route('/selecionar_validadores', methods=['POST'])
+def selecionar_validadores():
+    data = request.get_json()
+    transacao = data.get('transacao')
+
+    if not transacao:
+        return jsonify({"status": "Erro", "mensagem": "Dados da transação não fornecidos"}), 400
+
+    resultado = seletor.selecionar_validadores(transacao)
+    return jsonify(resultado)
