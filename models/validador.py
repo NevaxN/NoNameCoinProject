@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('C:\\Users\\arthu\\prog_Projects\\Universidade\\programacao_distribuida\\NoNameCoinProject')
+
 from util.status_transacao import *
 
 class Validador:
@@ -9,6 +13,9 @@ class Validador:
         self.chave_unica = chave_unica
         self.status_transacao = STATUS_NAO_EXECUTADA  # 0 = Não executada, 1 = Concluída com Sucesso, 2 = Não aprovada (erro)
         self.quant_flag = 0
+
+    def atualizar_id(self):
+        self.id_validador += 1
 
     def atualizar_saldo(self, amount):
         self.saldo_atual += amount
@@ -29,4 +36,11 @@ class Validador:
         self.status_transacao = status
 
     def objeto_validador(self):
-        return {str(self.id_validador): {self.saldo_atual, self.horario_ultima_trans, self.total_transacoes, self.chave_unica,self.status_transacao, self.quant_flag}}
+        print(self.status_transacao)
+        return {str(self.id_validador): {
+                                        'saldo_atual': self.saldo_atual, 
+                                        'horario_ultima_trans' : self.horario_ultima_trans,
+                                        'total_transacoes': self.total_transacoes, 
+                                        'chave_unica': self.chave_unica,
+                                        'status_transacao': self.status_transacao,
+                                        'quant_flag': self.quant_flag}}

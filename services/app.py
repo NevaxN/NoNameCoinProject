@@ -1,4 +1,9 @@
+import sys
+
+sys.path.append('C:\\Users\\arthu\\prog_Projects\\Universidade\\programacao_distribuida\\NoNameCoinProject')
+
 from controllers.validador_controller import ValidadorController
+from controllers.seletor_controller import Seletor_Controller
 from flask import Flask
 
 app = Flask(__name__)
@@ -17,12 +22,19 @@ def hora():
 
 @app.route('/seletor')
 def seletor():
-    return "Funcionando"
+    s = Seletor_Controller()
+    s.cadastrar_validador()
+    return s.listar_validadores()
 
 @app.route('/validador')
 def validador():
+    seletor = Seletor_Controller()
+    chave_unica = seletor.criar_chave_unica()
     v = ValidadorController()
-    return v.retornar_objeto()
+    '''
+    v.validar_transacao()
+    return v.retornar_objeto_json()'''
+    return "Funcionando"
 
 if __name__ == "__main__":
     app.run(debug=True)

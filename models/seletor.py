@@ -11,15 +11,16 @@ from threading import Timer
 
 class Seletor:
     def __init__(self):
-        self.validadores = {}
-        #self.transacoes = []
+        self.id_seletor = 0
+        self.validadores = {str(self.id_seletor): {}}
+        self.transacoes = []
         self.chave_unica = ''
         self.valor_taxa = 0.0
         self.saldo_minimo = 0.0
         self.saldo_atual = 0.0
 
 
-'''    # Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
+'''# Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
     def calcular_percentual(self, moedas, flag):
         base = moedas
         if flag == 1:

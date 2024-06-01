@@ -28,76 +28,75 @@ NoNameCoins;
 9- Para cada validação bem sucedida o seletor recebera 1,5% da quantidade de NoNameCoins
 transacionadas, ficando 0,5% travado para o validador e o restante distribuído igualitariamente
 entre os validadores;'''
-from flask import Blueprint, request, jsonify
-from model.seletor import Seletor
+import sys
 
+sys.path.append('C:\\Users\\arthu\\prog_Projects\\Universidade\\programacao_distribuida\\NoNameCoinProject')
 
-def criar_chave_unica():
-    from random import randint
-    from string import ascii_letters
+from models.seletor import Seletor
+from controllers.validador_controller import ValidadorController
+import json
 
-    chave_unica = ''
-    for i in range (10):
-        chave_unica += ascii_letters[(randint(0, 50))]
+class Seletor_Controller():
 
-    return chave_unica
-# Criação do blueprint do Flask
-'''seletor_bp = Blueprint('seletor_bp', __name__)
+    def __init__(self):
+        self.vc = ValidadorController()
+        self.seletor = Seletor()
 
-# Inicialização do objeto Seletor
-seletor = Seletor()
+    def criar_chave_unica(self):
+        from random import randint
+        from string import ascii_letters
 
-# Rota para cadastrar um validador
-@seletor_bp.route('/cadastrar_validador', methods=['POST'])
-def cadastrar_validador():
-    data = request.get_json()
-    id_validador = data.get('id_validador')
-    moedas = data.get('moedas')
+        chave_unica = ''
+        for i in range (10):
+            chave_unica += ascii_letters[(randint(0, 50))]
 
-    if not id_validador or moedas is None:
-        return jsonify({"status": "Erro", "mensagem": "Dados incompletos"}), 400
+        return chave_unica
 
-    resultado = seletor.cadastrar_validador(id_validador, moedas)
-    return jsonify(resultado)
+    # Rota para cadastrar um validador
+    #@seletor_bp.route('/cadastrar_validador', methods=['POST'])
+    def cadastrar_validador(self):
+        self.seletor.validadores[str(self.seletor.id_seletor)] = self.vc.retornar_objeto_json(self.criar_chave_unica())
+        print('Cadastrado')
 
-# Rota para listar validadores
-@seletor_bp.route('/listar_validadores', methods=['GET'])
-def listar_validadores():
-    resultado = seletor.listar_validadores()
-    return jsonify(resultado)
+    # Rota para listar validadores
+    #@seletor_bp.route('/listar_validadores', methods=['GET'])
+    def listar_validadores(self):
+        json_object = json.dumps(self.seletor.validadores, indent=4)
+        return json_object
 
-# Rota para adicionar flag a um validador
-@seletor_bp.route('/adicionar_flag', methods=['POST'])
-def adicionar_flag():
-    data = request.get_json()
-    id_validador = data.get('id_validador')
+    '''# Rota para adicionar flag a um validador
+    @seletor_bp.route('/adicionar_flag', methods=['POST'])
+    def adicionar_flag(self):
+        data = request.get_json()
+        id_validador = data.get('id_validador')
 
-    if not id_validador:
-        return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
+        if not id_validador:
+            return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
 
-    resultado = seletor.adicionar_flag(id_validador)
-    return jsonify(resultado)
+        resultado = seletor.adicionar_flag(id_validador)
+        return jsonify(resultado)
 
-# Rota para expulsar um validador
-@seletor_bp.route('/expulsar_validador', methods=['POST'])
-def expulsar_validador():
-    data = request.get_json()
-    id_validador = data.get('id_validador')
+    # Rota para expulsar um validador
+    @seletor_bp.route('/expulsar_validador', methods=['POST'])
+    def expulsar_validador(self):
+        data = request.get_json()
+        id_validador = data.get('id_validador')
 
-    if not id_validador:
-        return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
+        if not id_validador:
+            return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
 
-    resultado = seletor.expulsar_validador(id_validador)
-    return jsonify(resultado)
+        resultado = seletor.expulsar_validador(id_validador)
+        return jsonify(resultado)
 
-# Rota para selecionar validadores
-@seletor_bp.route('/selecionar_validadores', methods=['POST'])
-def selecionar_validadores():
-    data = request.get_json()
-    transacao = data.get('transacao')
+    # Rota para selecionar validadores
+    @seletor_bp.route('/selecionar_validadores', methods=['POST'])
+    def selecionar_validadores(self):
+        data = request.get_json()
+        transacao = data.get('transacao')
 
-    if not transacao:
-        return jsonify({"status": "Erro", "mensagem": "Dados da transação não fornecidos"}), 400
+        if not transacao:
+            return jsonify({"status": "Erro", "mensagem": "Dados da transação não fornecidos"}), 400
 
-    resultado = seletor.selecionar_validadores(transacao)
-    return jsonify(resultado)'''
+        resultado = seletor.selecionar_validadores(transacao)
+        return jsonify(resultado)
+    '''
