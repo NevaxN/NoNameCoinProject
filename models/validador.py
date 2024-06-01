@@ -1,6 +1,7 @@
 import sys
+import os
 
-sys.path.append('C:\\Users\\arthu\\prog_Projects\\Universidade\\programacao_distribuida\\NoNameCoinProject')
+sys.path.append(os.path.dirname(os.getcwd()))
 
 from util.status_transacao import *
 
