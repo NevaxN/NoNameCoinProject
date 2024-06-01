@@ -1,4 +1,4 @@
-import NoNameCoinProject.controller.validador_controller
+from controllers.validador_controller import ValidadorController
 from flask import Flask
 
 app = Flask(__name__)
@@ -21,7 +21,8 @@ def seletor():
 
 @app.route('/validador')
 def validador():
-    return "Funcionando"
+    v = ValidadorController()
+    return v.retornar_objeto()
 
 if __name__ == "__main__":
     app.run(debug=True)
