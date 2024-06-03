@@ -14,10 +14,10 @@ class Validador:
         self.chave_unica = chave_unica
         self.status_transacao = STATUS_NAO_EXECUTADA  # 0 = Não executada, 1 = Concluída com Sucesso, 2 = Não aprovada (erro)
         self.quant_flag = 0
-
+    
     def atualizar_id(self):
         self.id_validador += 1
-
+    
     def atualizar_saldo(self, amount):
         self.saldo_atual += amount
 
