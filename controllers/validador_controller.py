@@ -14,7 +14,6 @@ class ValidadorController:
     def __init__(self):
         # chave_unica
         self.transacao = Transacao()
-        # self.validadores = {}
 
     '''def obter_ou_criar_validador(self, chave_unica):
         if chave_unica not in self.validadores:
@@ -24,8 +23,8 @@ class ValidadorController:
     def retornar_objeto_json(self, chave_unica):
         validador = Validador(chave_unica)
         validador_details = validador.objeto_validador()
+        self.validar_transacao(chave_unica)
         json_object = json.dumps(validador_details, indent=4)
-        validador.atualizar_id()
         return json_object
 
     '''def criar_transacao(self, chave_unica):
@@ -61,6 +60,7 @@ class ValidadorController:
             return False
 
         # Atualizar status e contador de transações
+        validador.atualizar_id()
         validador.atualizar_saldo(-(t['amount'] + t['taxa']))
         validador.atualizar_ultima_transacao(t['timestamp'])
         validador.incrementar_total_transacoes()

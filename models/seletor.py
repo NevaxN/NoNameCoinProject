@@ -10,7 +10,7 @@ from threading import Timer
 class Seletor:
     def __init__(self):
         self.id_seletor = 0
-        self.validadores = {str(self.id_seletor): {}}
+        self.validadores = []
         self.transacoes = []
         self.chave_unica = ''
         self.valor_taxa = 0.0

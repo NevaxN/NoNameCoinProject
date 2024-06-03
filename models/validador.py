@@ -39,7 +39,6 @@ class Validador:
         self.status_transacao = status
 
     def objeto_validador(self):
-        print(self.status_transacao)
         return {str(self.id_validador): {
             'saldo_atual': self.saldo_atual,
             'horario_ultima_trans': self.horario_ultima_trans,

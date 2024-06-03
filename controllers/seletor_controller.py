@@ -52,13 +52,12 @@ class Seletor_Controller():
         return chave_unica
 
     def cadastrar_validador(self):
-        print(self.seletor)
+        for i in range(3):
+            self.seletor.validadores.append(self.vc.retornar_objeto_json(self.criar_chave_unica()))
+            print('Cadastrado')
+
         if len(self.seletor.validadores) >= 3:
             return {"status": "Já existem 3 validadores cadastrados"}
-
-        self.seletor.validadores[str(self.seletor.id_seletor)] = self.vc.retornar_objeto_json(
-            self.criar_chave_unica())
-        print('Cadastrado')
 
     def listar_validadores(self):
         if len(self.seletor.validadores) < 3:
