@@ -30,16 +30,19 @@ transacionadas, ficando 0,5% travado para o validador e o restante distribuído 
 entre os validadores;'''
 import sys
 import os
+import json
+import time
+from threading import Timer
+from random import choices
 
 sys.path.append(os.path.dirname(os.getcwd()))
 
 from models.seletor import Seletor
 from controllers.validador_controller import ValidadorController
-import json
 
 class Seletor_Controller():
 
-    def __init__(self):
+    def _init_(self):
         self.vc = ValidadorController()
         self.seletor = Seletor()
 
@@ -47,57 +50,96 @@ class Seletor_Controller():
         from random import randint
         from string import ascii_letters
 
-        chave_unica = ''
-        for i in range (10):
-            chave_unica += ascii_letters[(randint(0, 50))]
-
+        chave_unica = ''.join(choices(ascii_letters, k=10))
         return chave_unica
 
-    # Rota para cadastrar um validador
-    #@seletor_bp.route('/cadastrar_validador', methods=['POST'])
     def cadastrar_validador(self):
+        if len(self.seletor.validadores) >= 3:
+            return {"status": "Já existem 3 validadores cadastrados"}
+
         self.seletor.validadores[str(self.seletor.id_seletor)] = self.vc.retornar_objeto_json(self.criar_chave_unica())
         print('Cadastrado')
 
-    # Rota para listar validadores
-    #@seletor_bp.route('/listar_validadores', methods=['GET'])
     def listar_validadores(self):
+        if len(self.seletor.validadores) < 3:
+            return {"status": "Número insuficiente de validadores. Cadastre pelo menos 3 validadores."}
+        
         json_object = json.dumps(self.seletor.validadores, indent=4)
         return json_object
 
-    '''# Rota para adicionar flag a um validador
-    @seletor_bp.route('/adicionar_flag', methods=['POST'])
-    def adicionar_flag(self):
-        data = request.get_json()
-        id_validador = data.get('id_validador')
-
-        if not id_validador:
-            return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
-
-        resultado = seletor.adicionar_flag(id_validador)
-        return jsonify(resultado)
+    # Rota para adicionar flag a um validador
+    '''def adicionar_flag(self, id_validador):
+        if id_validador in self.seletor.validadores:
+            self.seletor.validadores[id_validador]['flag'] += 1
+            if self.seletor.validadores[id_validador]['flag'] > 2:
+                self.seletor.validadores[id_validador]['expulso'] = True
+                return {"status": "Validador expulso"}
+            return {"status": "Flag adicionada com sucesso"}
+        return {"status": "Validador não encontrado"}'''
 
     # Rota para expulsar um validador
-    @seletor_bp.route('/expulsar_validador', methods=['POST'])
-    def expulsar_validador(self):
-        data = request.get_json()
-        id_validador = data.get('id_validador')
-
-        if not id_validador:
-            return jsonify({"status": "Erro", "mensagem": "ID do validador não fornecido"}), 400
-
-        resultado = seletor.expulsar_validador(id_validador)
-        return jsonify(resultado)
+    '''def expulsar_validador(self, id_validador):
+        if id_validador in self.seletor.validadores:
+            self.seletor.validadores[id_validador]['expulso'] = True
+            return {"status": "Validador expulso com sucesso"}
+        return {"status": "Validador não encontrado"}'''
 
     # Rota para selecionar validadores
-    @seletor_bp.route('/selecionar_validadores', methods=['POST'])
-    def selecionar_validadores(self):
-        data = request.get_json()
-        transacao = data.get('transacao')
+    '''def selecionar_validadores(self, transacao):
+        if len(self.seletor.validadores) < 3:
+            return {"status": "Número insuficiente de validadores. A transação será colocada em espera."}
 
-        if not transacao:
-            return jsonify({"status": "Erro", "mensagem": "Dados da transação não fornecidos"}), 400
+        validadores_disponiveis = [v for v in self.seletor.validadores.values() if not v['expulso']]
+        
+        if len(validadores_disponiveis) < 3:
+            return {"status": "Número insuficiente de validadores disponíveis. A transação será colocada em espera."}
 
-        resultado = seletor.selecionar_validadores(transacao)
-        return jsonify(resultado)
-    '''
+        # Simulação da escolha dos validadores
+        escolhidos = self.escolher_validadores(validadores_disponiveis, 3)
+        
+        resultado_consenso = self.gerar_consenso(escolhidos)
+        
+        if resultado_consenso['status'] == "Aprovada":
+            self.atualizar_saldo(transacao, escolhidos)
+        
+        return resultado_consenso'''
+
+    '''def escolher_validadores(self, validadores, num_escolhidos):
+        pesos = [self.calcular_percentual(v['moedas'], v['flag']) for v in validadores]
+        total_peso = sum(pesos)
+        
+        if total_peso == 0:
+            return []
+
+        percentuais = [min(p / total_peso, 0.2) for p in pesos]
+        escolhidos = choices(validadores, percentuais, k=num_escolhidos)
+
+        return escolhidos'''
+
+    '''def calcular_percentual(self, moedas, flag):
+        base = moedas
+        if flag == 1:
+            base *= 0.5
+        elif flag == 2:
+            base *= 0.25
+        return base'''
+
+    '''def gerar_consenso(self, validadores):
+        votos = [random.choice(["Aprovada", "Não Aprovada"]) for _ in validadores]
+        consenso = "Aprovada" if votos.count("Aprovada") > len(votos) / 2 else "Não Aprovada"
+        
+        return {"status": consenso, "validadores": validadores, "votos": votos}'''
+
+    '''def atualizar_saldo(self, transacao, validadores):
+        taxa = transacao['quantidade'] * 0.015
+        taxa_validador = transacao['quantidade'] * 0.005
+        taxa_distribuicao = (transacao['quantidade'] - taxa - taxa_validador) / len(validadores)
+
+        for validador in validadores:
+            validador['moedas'] += taxa_distribuicao
+            validador['transacoes_concluidas'] += 1
+
+        self.seletor.saldo += taxa
+        validadores[0]['moedas'] += taxa_validador  # Assumindo que o primeiro validador é o principal
+
+        return'''

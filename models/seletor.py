@@ -6,11 +6,8 @@ import time
 import random
 from threading import Timer
 
-# Simulação de banco de dados
-
-
 class Seletor:
-    def __init__(self):
+    def _init_(self):
         self.id_seletor = 0
         self.validadores = {str(self.id_seletor): {}}
         self.transacoes = []
@@ -18,9 +15,8 @@ class Seletor:
         self.valor_taxa = 0.0
         self.saldo_minimo = 0.0
         self.saldo_atual = 0.0
-
-
-'''# Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
+        
+    '''# Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
     def calcular_percentual(self, moedas, flag):
         base = moedas
         if flag == 1:
@@ -95,4 +91,4 @@ class Seletor:
                 self.validadores[id_validador]['expulso'] = True
             return {"status": "Flag adicionada com sucesso"}
         return {"status": "Validador não encontrado"}
-'''
+    '''
