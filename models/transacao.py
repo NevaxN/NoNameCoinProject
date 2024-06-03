@@ -1,5 +1,5 @@
 from datetime import datetime
-from controllers.validador_controller import ValidadorController
+
 import sys
 import os
 
@@ -14,14 +14,14 @@ class Transacao:
         self.timestamp = datetime.now()
         self.chave_validador = ''
 
-validador_controller = ValidadorController()
+    def retornar_objeto_transacao(self):
+        transacao = {
+            'sender': 'Alice',
+            'receiver': 'Bob',
+            'amount': 50,
+            'taxa': 1,
+            'timestamp': datetime.now(),
+            'chave_validador': ''
+        }
 
-transacao = Transacao(sender='Alice', receiver='Bob', amount=50, taxa=1, timestamp=datetime.now(), chave_validador='chave_validador_123')
-
-if validador_controller.validar_transacao("chave_validador_123", transacao):
-    print("Transação concluída com sucesso")
-else:
-    print("Transação não aprovada")
-    
-json_object = validador_controller.retornar_objeto_json("chave_validador_123")
-print(json_object)
+        return transacao

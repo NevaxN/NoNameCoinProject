@@ -6,8 +6,9 @@ import time
 import random
 from threading import Timer
 
+
 class Seletor:
-    def _init_(self):
+    def __init__(self):
         self.id_seletor = 0
         self.validadores = {str(self.id_seletor): {}}
         self.transacoes = []
@@ -15,8 +16,9 @@ class Seletor:
         self.valor_taxa = 0.0
         self.saldo_minimo = 0.0
         self.saldo_atual = 0.0
-        
-    '''# Calcula o percentual de chance de escolha de um validador com base nas moedas que ele possui e na flag
+
+    '''# Calcula o percentual de chance de escolha de um validador com base nas moedas que ele 
+    possui e na flag
     def calcular_percentual(self, moedas, flag):
         base = moedas
         if flag == 1:
@@ -42,7 +44,8 @@ class Seletor:
             'em_hold': False,
             'escolhido_count': 0
         }
-        return {"status": "Validador cadastrado com sucesso!", "chave_unica": self.validadores[id_validador]['chave_unica']}
+        return {"status": "Validador cadastrado com sucesso!", "chave_unica": self.validadores[
+        id_validador]['chave_unica']}
 
     # Lista todos os validadores cadastrados
     def listar_validadores(self):
@@ -51,13 +54,15 @@ class Seletor:
     # Seleciona validadores para uma transação, respeitando as condições especificadas
     def selecionar_validadores(self, transacao):
         self.transacoes.append(transacao)
-        validos = {k: v for k, v in self.validadores.items() if not v['em_hold'] and not v['expulso']}
+        validos = {k: v for k, v in self.validadores.items() if not v['em_hold'] and not v[
+        'expulso']}
         
         if len(validos) < 3:
             Timer(60, self.selecionar_validadores, args=[transacao]).start()
             return {"status": "Número insuficiente de validadores, transação em espera"}
 
-        total_moedas = sum([self.calcular_percentual(v['moedas'], v['flag']) for v in validos.values()])
+        total_moedas = sum([self.calcular_percentual(v['moedas'], v['flag']) for v in 
+        validos.values()])
         selecoes = []
         for validador, dados in validos.items():
             chance = self.calcular_percentual(dados['moedas'], dados['flag']) / total_moedas

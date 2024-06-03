@@ -31,8 +31,6 @@ entre os validadores;'''
 import sys
 import os
 import json
-import time
-from threading import Timer
 from random import choices
 
 sys.path.append(os.path.dirname(os.getcwd()))
@@ -40,30 +38,33 @@ sys.path.append(os.path.dirname(os.getcwd()))
 from models.seletor import Seletor
 from controllers.validador_controller import ValidadorController
 
+
 class Seletor_Controller():
 
-    def _init_(self):
+    def __init__(self):
         self.vc = ValidadorController()
         self.seletor = Seletor()
 
     def criar_chave_unica(self):
-        from random import randint
         from string import ascii_letters
 
         chave_unica = ''.join(choices(ascii_letters, k=10))
         return chave_unica
 
     def cadastrar_validador(self):
+        print(self.seletor)
         if len(self.seletor.validadores) >= 3:
             return {"status": "Já existem 3 validadores cadastrados"}
 
-        self.seletor.validadores[str(self.seletor.id_seletor)] = self.vc.retornar_objeto_json(self.criar_chave_unica())
+        self.seletor.validadores[str(self.seletor.id_seletor)] = self.vc.retornar_objeto_json(
+            self.criar_chave_unica())
         print('Cadastrado')
 
     def listar_validadores(self):
         if len(self.seletor.validadores) < 3:
-            return {"status": "Número insuficiente de validadores. Cadastre pelo menos 3 validadores."}
-        
+            return {
+                "status": "Número insuficiente de validadores. Cadastre pelo menos 3 validadores."}
+
         json_object = json.dumps(self.seletor.validadores, indent=4)
         return json_object
 
@@ -87,12 +88,14 @@ class Seletor_Controller():
     # Rota para selecionar validadores
     '''def selecionar_validadores(self, transacao):
         if len(self.seletor.validadores) < 3:
-            return {"status": "Número insuficiente de validadores. A transação será colocada em espera."}
+            return {"status": "Número insuficiente de validadores. A transação será colocada em 
+            espera."}
 
         validadores_disponiveis = [v for v in self.seletor.validadores.values() if not v['expulso']]
         
         if len(validadores_disponiveis) < 3:
-            return {"status": "Número insuficiente de validadores disponíveis. A transação será colocada em espera."}
+            return {"status": "Número insuficiente de validadores disponíveis. A transação será 
+            colocada em espera."}
 
         # Simulação da escolha dos validadores
         escolhidos = self.escolher_validadores(validadores_disponiveis, 3)
@@ -140,6 +143,7 @@ class Seletor_Controller():
             validador['transacoes_concluidas'] += 1
 
         self.seletor.saldo += taxa
-        validadores[0]['moedas'] += taxa_validador  # Assumindo que o primeiro validador é o principal
+        validadores[0]['moedas'] += taxa_validador  # Assumindo que o primeiro validador é o 
+        principal
 
         return'''
