@@ -36,13 +36,10 @@ from random import choices
 sys.path.append(os.path.dirname(os.getcwd()))
 
 from models.seletor import Seletor
-from controllers.validador_controller import ValidadorController
-
 
 class Seletor_Controller():
 
     def __init__(self):
-        self.vc = ValidadorController()
         self.seletor = Seletor()
 
     def criar_chave_unica(self):
@@ -51,20 +48,21 @@ class Seletor_Controller():
         chave_unica = ''.join(choices(ascii_letters, k=10))
         return chave_unica
 
-    def cadastrar_validador(self):
+    def cadastrar_validador(self, lista_validadores):
+        print(lista_validadores)
         for i in range(3):
-            self.seletor.validadores.append(self.vc.retornar_objeto_json(self.criar_chave_unica()))
+            self.seletor.validadores.append(lista_validadores[i])
             print('Cadastrado')
 
         if len(self.seletor.validadores) >= 3:
             return {"status": "Já existem 3 validadores cadastrados"}
 
-    def listar_validadores(self):
+    def listar_validadores_escolhidos(self):
         if len(self.seletor.validadores) < 3:
             return {
                 "status": "Número insuficiente de validadores. Cadastre pelo menos 3 validadores."}
-
-        json_object = json.dumps(self.seletor.validadores, indent=4)
+        validadores_dict = {'seletor_escolhas' : self.seletor.validadores}
+        json_object = json.dumps(validadores_dict, indent=4)
         return json_object
 
     # Rota para adicionar flag a um validador

@@ -7,15 +7,16 @@ from util.status_transacao import *
 from time import time, asctime
 
 class Validador:
-    def __init__(self, chave_unica):
+    def __init__(self):
         self.id_validador = 0
         self.saldo_atual = 500.0
         self.horario_ultima_trans = time()
         self.total_transacoes = 10
-        self.chave_unica = chave_unica
+        self.chave_unica = ''
         self.status_transacao = STATUS_NAO_EXECUTADA  # 0 = Não executada, 1 = Concluída com
         # Sucesso, 2 = Não aprovada (erro)
         self.quant_flag = 0
+        self.validadores = []
 
     def atualizar_id(self):
         self.id_validador += 1
@@ -37,12 +38,3 @@ class Validador:
 
     def atualizar_status_transacao(self, status):
         self.status_transacao = status
-
-    def objeto_validador(self):
-        return {str(self.id_validador): {
-            'saldo_atual': self.saldo_atual,
-            'horario_ultima_trans': asctime(),
-            'total_transacoes': self.total_transacoes,
-            'chave_unica': self.chave_unica,
-            'status_transacao': self.status_transacao,
-            'quant_flag': self.quant_flag}}
