@@ -3,7 +3,7 @@ import os
 
 sys.path.append(os.path.dirname(os.getcwd()))
 
-from datetime import datetime
+from time import time
 from models.validador import Validador
 from models.transacao import Transacao
 from util.status_transacao import *
@@ -34,6 +34,7 @@ class ValidadorController:
 
     def validar_transacao(self, chave_unica):
         validador = Validador(chave_unica)
+        print(validador.horario_ultima_trans)
         t = self.transacao.retornar_objeto_transacao()
         # Regra 1: Verificar saldo
         if validador.saldo_atual < t['amount'] + t['taxa']:
@@ -41,7 +42,7 @@ class ValidadorController:
             return False
 
         # Regra 2: Verificar horário da última transação
-        if t['timestamp'] > datetime.now():
+        if t['timestamp'] > time():
             validador.atualizar_status_transacao(
                 STATUS_NAO_APROVADA)  # Horário da transação é no futuro
             return False

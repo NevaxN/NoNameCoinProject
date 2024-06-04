@@ -1,4 +1,4 @@
-from datetime import datetime
+from time import time
 
 import sys
 import os
@@ -11,7 +11,7 @@ class Transacao:
         self.receiver = ''
         self.amount = 0.0
         self.taxa = 0.0
-        self.timestamp = datetime.now()
+        self.timestamp = time()
         self.chave_validador = ''
 
     def retornar_objeto_transacao(self):
@@ -20,7 +20,7 @@ class Transacao:
             'receiver': 'Bob',
             'amount': 50,
             'taxa': 1,
-            'timestamp': datetime.now(),
+            'timestamp': time(),
             'chave_validador': ''
         }
 

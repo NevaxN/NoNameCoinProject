@@ -4,14 +4,14 @@ import os
 sys.path.append(os.path.dirname(os.getcwd()))
 
 from util.status_transacao import *
-
+from time import time, asctime
 
 class Validador:
     def __init__(self, chave_unica):
         self.id_validador = 0
-        self.saldo_atual = 0.0
-        self.horario_ultima_trans = None
-        self.total_transacoes = 0
+        self.saldo_atual = 500.0
+        self.horario_ultima_trans = time()
+        self.total_transacoes = 10
         self.chave_unica = chave_unica
         self.status_transacao = STATUS_NAO_EXECUTADA  # 0 = Não executada, 1 = Concluída com
         # Sucesso, 2 = Não aprovada (erro)
@@ -41,7 +41,7 @@ class Validador:
     def objeto_validador(self):
         return {str(self.id_validador): {
             'saldo_atual': self.saldo_atual,
-            'horario_ultima_trans': self.horario_ultima_trans,
+            'horario_ultima_trans': asctime(),
             'total_transacoes': self.total_transacoes,
             'chave_unica': self.chave_unica,
             'status_transacao': self.status_transacao,
