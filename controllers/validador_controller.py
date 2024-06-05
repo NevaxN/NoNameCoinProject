@@ -2,7 +2,7 @@ import random
 import sys
 import os
 
-from NoNameCoinProject.util.status_transacao import STATUS_NAO_APROVADA, STATUS_TRANSACAO_CONCLUIDA
+#from NoNameCoinProject.util.status_transacao import STATUS_NAO_APROVADA, STATUS_TRANSACAO_CONCLUIDA
 
 sys.path.append(os.path.dirname(os.getcwd()))
 
@@ -10,7 +10,7 @@ from time import time
 from models.validador import Validador
 from models.transacao import Transacao
 from controllers.seletor_controller import Seletor_Controller
-
+from util.status_transacao import STATUS_NAO_APROVADA, STATUS_TRANSACAO_CONCLUIDA
 
 class ValidadorController:
     def __init__(self):
@@ -32,7 +32,7 @@ class ValidadorController:
     def gerar_validadores(self):
         for i in range(10):
             self.validador.id_validador = i
-            self.validador.saldo_atual = random.randint(500, 1000)
+            self.validador.saldo_atual = random.randint(47, 55)
             self.validador.total_transacoes = random.randint(0, 10)
             self.validador.chave_unica = self.sc.criar_chave_unica()
             self.validador.status_transacao = self.validar_transacao()

@@ -31,6 +31,8 @@ def hora():
 @app.route('/seletor')
 def seletor():
     s.cadastrar_validador(v.listar_validadores())
+    s.selecionar_validadores()
+    #s.adicionar_flag(v.listar_validadores()['id'])
     return s.listar_validadores_escolhidos()
 
 

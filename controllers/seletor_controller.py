@@ -36,11 +36,13 @@ from random import choices
 sys.path.append(os.path.dirname(os.getcwd()))
 
 from models.seletor import Seletor
+from models.validador import Validador
 
 class Seletor_Controller():
 
     def __init__(self):
         self.seletor = Seletor()
+        self.validadores = {}
 
     def criar_chave_unica(self):
         from string import ascii_letters
@@ -48,14 +50,32 @@ class Seletor_Controller():
         chave_unica = ''.join(choices(ascii_letters, k=10))
         return chave_unica
 
-    def cadastrar_validador(self, lista_validadores):
+    '''def cadastrar_validador(self, lista_validadores):
         print(lista_validadores)
         for i in range(3):
             self.seletor.validadores.append(lista_validadores[i])
             print('Cadastrado')
 
         if len(self.seletor.validadores) >= 3:
-            return {"status": "Já existem 3 validadores cadastrados"}
+            return {"status": "Já existem 3 validadores cadastrados"}'''
+            
+    def cadastrar_validador(self, lista_validadores):
+        for i, validador in enumerate(lista_validadores):
+            if validador['saldo_atual'] >= 51:
+                self.validadores[str(i)] = Validador(
+                    chave_unica=str(i),
+                    saldo_atual=validador['saldo_atual'],
+                    horario_ultima_trans=validador['horario_ultima_trans'],
+                    total_transacoes=['total_transacoes'],
+                    quant_flags=['quant_flags']
+                )
+        
+    def selecionar_validadores(self):
+        # Selecionar validadores com base no saldo atual e quantidade de flags
+        validadores_ordenados = sorted(self.validadores.values(), key=lambda v: (-v.saldo_atual, v.quant_flags))
+        # Selecionar os três primeiros validadores
+        validadores_selecionados = validadores_ordenados[:3]
+        return [validador.chave_unica for validador in validadores_selecionados]
 
     def listar_validadores_escolhidos(self):
         if len(self.seletor.validadores) < 3:
@@ -64,6 +84,7 @@ class Seletor_Controller():
         validadores_dict = {'seletor_escolhas' : self.seletor.validadores}
         json_object = json.dumps(validadores_dict, indent=4)
         return json_object
+
 
     # Rota para adicionar flag a um validador
     '''def adicionar_flag(self, id_validador):
