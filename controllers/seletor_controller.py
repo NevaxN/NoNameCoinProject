@@ -38,6 +38,7 @@ sys.path.append(os.path.dirname(os.getcwd()))
 from models.seletor import Seletor
 from models.validador import Validador
 
+
 class Seletor_Controller():
 
     def __init__(self):
@@ -58,33 +59,34 @@ class Seletor_Controller():
 
         if len(self.seletor.validadores) >= 3:
             return {"status": "Já existem 3 validadores cadastrados"}'''
-            
+
     def cadastrar_validador(self, lista_validadores):
         for i, validador in enumerate(lista_validadores):
             if validador['saldo_atual'] >= 51:
-                self.validadores[str(i)] = Validador(
-                    chave_unica=str(i),
-                    saldo_atual=validador['saldo_atual'],
-                    horario_ultima_trans=validador['horario_ultima_trans'],
-                    total_transacoes=['total_transacoes'],
-                    quant_flags=['quant_flags']
-                )
-        
-    def selecionar_validadores(self):
+                self.validadores[str(i)] = {
+                    'chave_unica': validador['chave_unica'],
+                    'saldo_atual': validador['saldo_atual'],
+                    'horario_ultima_trans': validador['horario_ultima_trans'],
+                    'total_transacoes': validador['total_transacoes'],
+                    'quant_flags': validador['quant_flag']
+                }
+        return self.validadores
+
+    '''def selecionar_validadores(self):
         # Selecionar validadores com base no saldo atual e quantidade de flags
         validadores_ordenados = sorted(self.validadores.values(), key=lambda v: (-v.saldo_atual, v.quant_flags))
         # Selecionar os três primeiros validadores
         validadores_selecionados = validadores_ordenados[:3]
-        return [validador.chave_unica for validador in validadores_selecionados]
+        return [validador.chave_unica for validador in validadores_selecionados]'''
 
     def listar_validadores_escolhidos(self):
-        if len(self.seletor.validadores) < 3:
+        print(self.validadores)
+        if len(self.validadores) < 3:
             return {
                 "status": "Número insuficiente de validadores. Cadastre pelo menos 3 validadores."}
-        validadores_dict = {'seletor_escolhas' : self.seletor.validadores}
+        validadores_dict = {'seletor_escolhas': self.validadores}
         json_object = json.dumps(validadores_dict, indent=4)
         return json_object
-
 
     # Rota para adicionar flag a um validador
     '''def adicionar_flag(self, id_validador):
