@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.getcwd()))
 
 from controllers.validador_controller import ValidadorController
 from controllers.seletor_controller import Seletor_Controller
-from flask import Flask, redirect
+from flask import Flask, redirect, request, jsonify
 
 app = Flask(__name__)
 
@@ -16,6 +16,17 @@ s = Seletor_Controller()
 @app.route('/')
 def conexao_banco():
     return "Funcionando"
+
+
+@app.route('/validador')
+def listar_validadores():
+    return v.listar_validadores()
+
+
+@app.route('/validador/<string:chave_unica>/<int:saldo_atual>', methods=['POST'])
+def InserirValidador(chave_unica, saldo_atual):
+    if request.method == 'POST' and chave_unica != '' and saldo_atual != 0:
+
 
 
 @app.route('/trans')
@@ -35,14 +46,10 @@ def seletor():
     return s.listar_validadores_escolhidos()
 
 
-@app.route('/validador')
-def validador():
-    return redirect("http://127.0.0.1:5000/validador/listar_validadores")
 
 
-@app.route('/validador/listar_validadores')
-def listar_validadores():
-    return v.listar_validadores()
+
+
 
 
 if __name__ == "__main__":
