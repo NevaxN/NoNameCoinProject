@@ -13,15 +13,3 @@ class Transacao:
         self.taxa = 0.0
         self.timestamp = time()
         self.chave_validador = ''
-
-    def retornar_objeto_transacao(self):
-        transacao = {
-            'sender': 'Alice',
-            'receiver': 'Bob',
-            'amount': 50,
-            'taxa': 1,
-            'timestamp': time(),
-            'chave_validador': ''
-        }
-
-        return transacao
