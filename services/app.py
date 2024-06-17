@@ -216,6 +216,50 @@ def CriaTransacao(rem, reb, valor):
         return jsonify(objeto)
     else:
         return jsonify(['Method Not Allowed'])
+    
+'''
+tentativa de mundança para criar uma transacao
+@app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
+def CriaTransacao(rem, reb, valor):
+    if request.method == 'POST':
+        try:
+            # Criação da transação local
+            nova_transacao = Transacao(remetente=rem, recebedor=reb, valor=valor, status=0, horario=datetime.now())
+            db.session.add(nova_transacao)
+            db.session.commit()
+
+            # Notificar outros seletores (seletors)
+            seletores = Seletor.query.all()
+            for seletor in seletores:
+                url = f'http://{seletor.ip}/notificar-transacao'
+                try:
+                #requisicao post para o seletor
+                    requests.post(url, json={
+                        "remetente": rem,
+                        "recebedor": reb,
+                        "valor": valor,
+                        "status": 0,
+                        "horario": nova_transacao.horario.isoformat()
+                    })
+                except requests.exceptions.RequestException as e:
+                    print(f"Erro ao notificar seletor {seletor.nome}: {e}")
+
+            # Retornar os detalhes da transação criada
+            return jsonify({
+                "id": nova_transacao.id,
+                "remetente": nova_transacao.remetente,
+                "recebedor": nova_transacao.recebedor,
+                "valor": nova_transacao.valor,
+                "status": nova_transacao.status,
+                "horario": nova_transacao.horario.isoformat()
+            }), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    
+    else:
+        return jsonify({'error': 'Method Not Allowed'}), 405
+'''
 
 
 @app.route('/transacoes/<int:id>', methods=['GET'])

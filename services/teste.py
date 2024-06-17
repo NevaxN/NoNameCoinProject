@@ -15,4 +15,7 @@ import requests
 #response = requests.post('http://localhost:5000/seletor/2/seletorA/222222')
 #response = requests.delete('http://localhost:5000/seletor/2')
 
+#criando uma transacao
+#response = requests.post('http://localhost:5000/transacoes/1/2/50')
+
 #print(response.text)
