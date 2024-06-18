@@ -236,7 +236,8 @@ def CriaTransacao(rem, reb, valor):
     db.session.add(transacao)
     db.session.commit()
 
-    seletores = Seletor.query.order_by(Seletor.saldo.desc()).limit(3).all()
+    seletores = Seletor.query.all()
+    validadores = random.sample(seletores, min(3, len(seletores)))
 
     def enviar_validacao(transacao, validadores):
         respostas = []
@@ -264,7 +265,7 @@ def CriaTransacao(rem, reb, valor):
         return transacao.status
 
     # Enviar validação de forma síncrona e aguardar o resultado
-    status_final = enviar_validacao(transacao, seletores)
+    status_final = enviar_validacao(transacao, validadores)
 
     return jsonify({"id": transacao.id, "status": status_final})
 
