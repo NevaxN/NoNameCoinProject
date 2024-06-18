@@ -16,7 +16,7 @@ import requests
 #response = requests.delete('http://localhost:5000/seletor/2')
 
 #criando uma transacao
-#response = requests.post('http://localhost:5000/transacoes/1/2/50')
+response = requests.post('http://localhost:5000/transacoes/2/3/300')
 
 response = requests.post('http://127.0.0.1:5000/validar')
 

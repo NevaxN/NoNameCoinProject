@@ -257,24 +257,24 @@ def CriaTransacao(rem, reb, valor):
             transacao.status = STATUS_TRANSACAO_CONCLUIDA
             remetente.qtdMoeda -= valor
             recebedor.qtdMoeda += valor
-            db.session.commit()
         else:
             transacao.status = STATUS_NAO_APROVADA
-            db.session.commit()
 
-    thread = threading.Thread(target=enviar_validacao, args=(transacao, seletores))
-    thread.start()
+        db.session.commit()
+        return transacao.status
 
-    return jsonify(transacao)
+    # Enviar validação de forma síncrona e aguardar o resultado
+    status_final = enviar_validacao(transacao, seletores)
+
+    return jsonify({"id": transacao.id, "status": status_final})
 
 
 @app.route('/transacoes/<int:id>', methods=['GET'])
-def UmaTransacao(id):
-    if (request.method == 'GET'):
-        objeto = Transacao.query.get(id)
-        return jsonify(objeto)
-    else:
-        return jsonify(['Method Not Allowed'])
+def VerificarStatusTransacao(id):
+    transacao = Transacao.query.get(id)
+    if transacao is None:
+        return jsonify({"message": "Transação não encontrada"}), 404
+    return jsonify({"status": transacao.status})
 
 
 @app.route('/transacoes/<int:id>/<int:status>', methods=["POST"])
