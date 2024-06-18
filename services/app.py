@@ -1,9 +1,19 @@
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.getcwd()))
+
+import random
+import threading
+
 from flask import Flask, request, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
+
+from util.status_transacao import STATUS_TRANSACAO_CONCLUIDA, STATUS_NAO_APROVADA, STATUS_NAO_EXECUTADA
 
 app = Flask(__name__)
 
@@ -30,10 +40,12 @@ class Seletor(db.Model):
     id: int
     nome: str
     ip: str
+    saldo: int
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(20), unique=False, nullable=False)
     ip = db.Column(db.String(15), unique=False, nullable=False)
+    saldo = db.Column(db.Integer, unique=False, nullable=False)
 
 
 @dataclass
@@ -62,14 +74,14 @@ def index():
     return jsonify(['API sem interface do banco!'])
 
 
-@app.route('/validador', methods=['GET'])
-def listar_validador():
-    validadores = Cliente.query.all()
-    return jsonify(validadores)
+@app.route('/cliente', methods=['GET'])
+def ListarCliente():
+    clientes = Cliente.query.all()
+    return jsonify(clientes)
 
 
-@app.route('/validador/<string:nome>/<string:senha>/<int:qtdMoeda>', methods=['POST'])
-def InserirValidador(nome, senha, qtdMoeda):
+@app.route('/cliente/<string:nome>/<string:senha>/<int:qtdMoeda>', methods=['POST'])
+def InserirCliente(nome, senha, qtdMoeda):
     if request.method == 'POST' and nome != '' and senha != '' and qtdMoeda != '':
         objeto = Cliente(nome=nome, senha=senha, qtdMoeda=qtdMoeda)
         db.session.add(objeto)
@@ -79,8 +91,8 @@ def InserirValidador(nome, senha, qtdMoeda):
         return jsonify(['Method Not Allowed'])
 
 
-@app.route('/validador/<int:id>', methods=['GET'])
-def UmValidador(id):
+@app.route('/cliente/<int:id>', methods=['GET'])
+def UmCliente(id):
     if (request.method == 'GET'):
         objeto = Cliente.query.get(id)
         return jsonify(objeto)
@@ -88,16 +100,16 @@ def UmValidador(id):
         return jsonify(['Method Not Allowed'])
 
 
-@app.route('/validador/<int:id>/<int:qtdMoedas>', methods=["POST"])
-def EditarValidador(id, qtdMoedas):
+@app.route('/cliente/<int:id>/<int:qtdMoedas>', methods=["POST"])
+def EditarCliente(id, qtdMoedas):
     if request.method == 'POST':
         try:
-            validador = Cliente.query.filter_by(id=id).first()
+            cliente = Cliente.query.filter_by(id=id).first()
 
-            if validador is None:
+            if cliente is None:
                 return jsonify({"message": "Cliente não encontrado"}), 404
 
-            validador.qtdMoedas = qtdMoedas
+            cliente.qtdMoedas = qtdMoedas
             db.session.commit()
             return jsonify({"message": "Alteração feita com sucesso"}), 200
         except Exception as e:
@@ -108,8 +120,8 @@ def EditarValidador(id, qtdMoedas):
         return jsonify({"message": "Método não permitido"}), 405
 
 
-@app.route('/validador/<int:id>', methods=['DELETE'])
-def ApagarValidador(id):
+@app.route('/cliente/<int:id>', methods=['DELETE'])
+def ApagarCliente(id):
     if (request.method == 'DELETE'):
         objeto = Cliente.query.get(id)
         db.session.delete(objeto)
@@ -132,9 +144,9 @@ def ListarSeletor():
 
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
-def InserirSeletor(nome, ip):
-    if request.method == 'POST' and nome != '' and ip != '':
-        objeto = Seletor(nome=nome, ip=ip)
+def InserirSeletor(nome, ip, saldo):
+    if request.method == 'POST' and nome != '' and ip != '' and saldo >= 50:
+        objeto = Seletor(nome=nome, ip=ip, saldo=saldo)
         db.session.add(objeto)
         db.session.commit()
         return jsonify(objeto)
@@ -151,18 +163,19 @@ def UmSeletor(id):
         return jsonify(['Method Not Allowed'])
 
 
-@app.route('/seletor/<int:id>/<string:nome>/<string:ip>', methods=["POST"])
-def EditarSeletor(id, nome, ip):
+@app.route('/seletor/<int:id>/<string:nome>/<string:ip>/<int:saldo>', methods=["POST"])
+def EditarSeletor(id, nome, ip, saldo):
     if request.method == 'POST':
         try:
-            varNome = nome
-            varIp = ip
-            validador = Seletor.query.filter_by(id=id).first()
+            seletor = Seletor.query.filter_by(id=id).first()
+            if seletor is None:
+                return jsonify({"message": "Seletor não encontrado"}), 404
+
+            seletor.nome = nome
+            seletor.ip = ip
+            seletor.saldo = saldo
             db.session.commit()
-            validador.nome = varNome
-            validador.ip = varIp
-            db.session.commit()
-            return jsonify(validador)
+            return jsonify(seletor)
         except Exception as e:
             data = {
                 "message": "Atualização não realizada"
@@ -203,63 +216,59 @@ def ListarTransacoes():
 
 @app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
 def CriaTransacao(rem, reb, valor):
-    if request.method == 'POST':
-        objeto = Transacao(remetente=rem, recebedor=reb, valor=valor, status=0, horario=datetime.now())
-        db.session.add(objeto)
-        db.session.commit()
+    remetente = Cliente.query.get(rem)
+    recebedor = Cliente.query.get(reb)
 
-        seletores = Seletor.query.all()
-        for seletor in seletores:
-            # Implementar a rota /localhost/<ipSeletor>/transacoes
-            url = seletor.ip + '/transacoes/'
-            requests.post(url, data=jsonify(objeto))
-        return jsonify(objeto)
-    else:
-        return jsonify(['Method Not Allowed'])
-    
-'''
-tentativa de mundança para criar uma transacao
-@app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
-def CriaTransacao(rem, reb, valor):
-    if request.method == 'POST':
-        try:
-            # Criação da transação local
-            nova_transacao = Transacao(remetente=rem, recebedor=reb, valor=valor, status=0, horario=datetime.now())
-            db.session.add(nova_transacao)
+    if remetente is None:
+        return jsonify({"message": "Remetente não encontrado"}), 404
+    if recebedor is None:
+        return jsonify({"message": "Recebedor não encontrado"}), 404
+
+    if remetente.qtdMoeda < valor:
+        return jsonify({"message": "Saldo insuficiente"}), 400
+
+    um_minuto_atras = datetime.now() - timedelta(minutes=1)
+    transacoes_recentes = Transacao.query.filter(Transacao.remetente == rem,
+                                                 Transacao.horario >= um_minuto_atras).count()
+
+    if transacoes_recentes >= 10:
+        return jsonify({"message": "Limite de transações por minuto excedido"}), 429
+
+    transacao = Transacao(remetente=rem, recebedor=reb, valor=valor, status=STATUS_NAO_EXECUTADA,
+                          horario=datetime.now())
+    db.session.add(transacao)
+    db.session.commit()
+
+    seletores = Seletor.query.order_by(Seletor.saldo.desc()).limit(3).all()
+
+    def enviar_validacao(transacao, validadores):
+        respostas = []
+        for seletor in validadores:
+            url = f'http://{seletor.ip}/transacoes/validar'
+            try:
+                response = requests.post(url,
+                                         json={"id": transacao.id, "remetente": rem, "recebedor": reb, "valor": valor,
+                                               "horario": transacao.horario.isoformat()})
+                if response.status_code == 200:
+                    respostas.append(response.json())
+            except Exception as e:
+                app.logger.error(f"Erro ao enviar transação para o seletor {seletor.ip}: {e}")
+
+        validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
+
+        if validacoes_positivas >= 2:
+            transacao.status = STATUS_TRANSACAO_CONCLUIDA
+            remetente.qtdMoeda -= valor
+            recebedor.qtdMoeda += valor
+            db.session.commit()
+        else:
+            transacao.status = STATUS_NAO_APROVADA
             db.session.commit()
 
-            # Notificar outros seletores (seletors)
-            seletores = Seletor.query.all()
-            for seletor in seletores:
-                url = f'http://{seletor.ip}/notificar-transacao'
-                try:
-                #requisicao post para o seletor
-                    requests.post(url, json={
-                        "remetente": rem,
-                        "recebedor": reb,
-                        "valor": valor,
-                        "status": 0,
-                        "horario": nova_transacao.horario.isoformat()
-                    })
-                except requests.exceptions.RequestException as e:
-                    print(f"Erro ao notificar seletor {seletor.nome}: {e}")
+    thread = threading.Thread(target=enviar_validacao, args=(transacao, seletores))
+    thread.start()
 
-            # Retornar os detalhes da transação criada
-            return jsonify({
-                "id": nova_transacao.id,
-                "remetente": nova_transacao.remetente,
-                "recebedor": nova_transacao.recebedor,
-                "valor": nova_transacao.valor,
-                "status": nova_transacao.status,
-                "horario": nova_transacao.horario.isoformat()
-            }), 200
-
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-    
-    else:
-        return jsonify({'error': 'Method Not Allowed'}), 405
-'''
+    return jsonify(transacao)
 
 
 @app.route('/transacoes/<int:id>', methods=['GET'])
@@ -290,10 +299,17 @@ def EditaTransacao(id, status):
         return jsonify(['Method Not Allowed'])
 
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return render_template('page_not_found.html'), 404
+@app.route('/transacoes/validar', methods=['POST'])
+def validar_transacao():
+    data = request.json
 
+    status = STATUS_TRANSACAO_CONCLUIDA
+    return jsonify({"status": status})
+
+
+'''@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('page_not_found.html'), 404'''
 
 if __name__ == "__main__":
     with app.app_context():

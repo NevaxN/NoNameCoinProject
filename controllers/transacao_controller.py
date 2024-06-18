@@ -12,14 +12,16 @@ Adiciona a transação ao banco de dados (db.session.add(objeto)).
 Notifica os seletores (seletors) sobre a nova transação através de requisições POST para seus respectivos IPs.
 Comita as alterações no banco de dados (db.session.commit()).
 '''
+import sys
+import os
 
+sys.path.append(os.path.dirname(os.getcwd()))
 
-from flask import jsonify, request
+from flask import jsonify
 from datetime import datetime
 import requests
-from ..services.app import app 
-from ..models import Cliente, Seletor, Transacao  # Importando os modelos do pacote superior
-from ..services.instance import db  # Importando a instância do banco de dados
+from services.app import Transacao, Cliente, Seletor
+
 
 def listar_transacoes():
     transacoes = Transacao.query.all()
