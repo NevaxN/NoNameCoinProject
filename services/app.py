@@ -142,7 +142,7 @@ def ListarSeletor():
 
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
-def InserirSeletor(nome, ip, saldo):
+def InserirSeletor(nome, ip):
     if request.method == 'POST' and nome != '' and ip != '':
         objeto = Seletor(nome=nome, ip=ip)
         db.session.add(objeto)
@@ -242,17 +242,34 @@ def CriaTransacao(rem, reb, valor):
     def enviar_validacao(transacao, validadores):
         respostas = []
         for seletor in validadores:
-            url = f'http://{seletor.ip}/transacoes/validar'
+            print(seletor)
+            url = f'http://127.0.0.1:5000/transacoes/validar'
             try:
-                response = requests.post(url,
-                                         json={"id": transacao.id, "remetente": rem, "recebedor": reb, "valor": valor,
-                                               "horario": transacao.horario.isoformat()})
-                if response.status_code == 200:
-                    respostas.append(response.json())
+                if remetente.qtdMoeda >= transacao.valor:
+                    response = requests.post(url,
+                                             json={"id": transacao.id, "remetente": rem, "recebedor": reb,
+                                                   "valor": valor,
+                                                   "status": STATUS_TRANSACAO_CONCLUIDA,
+                                                   "horario": transacao.horario.isoformat()})
+                    if response.status_code == 200:
+                        respostas.append(response.json())
+                else:
+                    response = requests.post(url,
+                                             json={"id": transacao.id, "remetente": rem, "recebedor": reb,
+                                                   "valor": valor,
+                                                   "status": STATUS_NAO_APROVADA,
+                                                   "horario": transacao.horario.isoformat()})
+                    if response.status_code == 200:
+                        respostas.append(response.json())
             except Exception as e:
                 app.logger.error(f"Erro ao enviar transação para o seletor {seletor.ip}: {e}")
 
+        for resposta in respostas:
+            print(f'Resposta: {resposta}')
+
         validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
+
+        print(validacoes_positivas)
 
         if validacoes_positivas >= 2:
             transacao.status = STATUS_TRANSACAO_CONCLUIDA
@@ -295,6 +312,14 @@ def EditaTransacao(id, status):
             return jsonify(data)
     else:
         return jsonify(['Method Not Allowed'])
+
+@app.route('/transacoes/validar', methods=['POST'])
+def validar_transacao():
+    data = request.get_json()
+    if data['valor'] > 0:  # Simulação de uma validação baseada no valor da transação
+        return jsonify({"status": STATUS_TRANSACAO_CONCLUIDA})
+    else:
+        return jsonify({"status": STATUS_NAO_APROVADA})
 
 
 '''@app.errorhandler(404)
