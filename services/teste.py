@@ -8,7 +8,7 @@ import requests
 #response = requests.post('http://localhost:5000/cliente/2/300')
 #response = requests.delete('http://localhost:5000/cliente/2')
 #Criando seletores
-#response = requests.post('http://localhost:5000/seletor/seletor1/123.123')
+#response = requests.post('http://http://127.0.0.1:5000/seletor/seletor1/123.123/70')
 #response = requests.post('http://localhost:5000/seletor/seletor2/122.122')
 #Editando seletores
 #response = requests.post('http://localhost:5000/seletor/1/seletorB/111111')
@@ -18,4 +18,6 @@ import requests
 #criando uma transacao
 #response = requests.post('http://localhost:5000/transacoes/1/2/50')
 
-#print(response.text)
+response = requests.post('http://127.0.0.1:5000/validar')
+
+print(response.text)

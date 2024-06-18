@@ -40,12 +40,10 @@ class Seletor(db.Model):
     id: int
     nome: str
     ip: str
-    saldo: int
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(20), unique=False, nullable=False)
     ip = db.Column(db.String(15), unique=False, nullable=False)
-    saldo = db.Column(db.Integer, unique=False, nullable=False)
 
 
 @dataclass
@@ -145,8 +143,8 @@ def ListarSeletor():
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
 def InserirSeletor(nome, ip, saldo):
-    if request.method == 'POST' and nome != '' and ip != '' and saldo >= 50:
-        objeto = Seletor(nome=nome, ip=ip, saldo=saldo)
+    if request.method == 'POST' and nome != '' and ip != '':
+        objeto = Seletor(nome=nome, ip=ip)
         db.session.add(objeto)
         db.session.commit()
         return jsonify(objeto)
@@ -163,8 +161,8 @@ def UmSeletor(id):
         return jsonify(['Method Not Allowed'])
 
 
-@app.route('/seletor/<int:id>/<string:nome>/<string:ip>/<int:saldo>', methods=["POST"])
-def EditarSeletor(id, nome, ip, saldo):
+@app.route('/seletor/<int:id>/<string:nome>/<string:ip>', methods=["POST"])
+def EditarSeletor(id, nome, ip):
     if request.method == 'POST':
         try:
             seletor = Seletor.query.filter_by(id=id).first()
@@ -173,12 +171,11 @@ def EditarSeletor(id, nome, ip, saldo):
 
             seletor.nome = nome
             seletor.ip = ip
-            seletor.saldo = saldo
             db.session.commit()
             return jsonify(seletor)
         except Exception as e:
             data = {
-                "message": "Atualização não realizada"
+                "message": f"Atualização não realizada; {e}",
             }
             return jsonify(data)
     else:
@@ -297,14 +294,6 @@ def EditaTransacao(id, status):
             return jsonify(data)
     else:
         return jsonify(['Method Not Allowed'])
-
-
-@app.route('/transacoes/validar', methods=['POST'])
-def validar_transacao():
-    data = request.json
-
-    status = STATUS_TRANSACAO_CONCLUIDA
-    return jsonify({"status": status})
 
 
 '''@app.errorhandler(404)
