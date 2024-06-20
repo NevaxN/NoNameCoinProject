@@ -210,6 +210,7 @@ def ListarTransacoes():
         transacoes = Transacao.query.all()
         return jsonify(transacoes)
 
+
 '''
 
 @app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
@@ -287,6 +288,8 @@ def CriaTransacao(rem, reb, valor):
 
     return jsonify({"id": transacao.id, "status": status_final})
 '''
+
+
 @app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
 def CriaTransacao(rem, reb, valor):
     try:
@@ -318,7 +321,7 @@ def CriaTransacao(rem, reb, valor):
         validadores = random.sample(seletores, min(3, len(seletores)))
 
         # Chamar a função de validação com os IDs do remetente e recebedor
-        status_final = enviar_validacao(transacao, validadores, rem, reb)
+        status_final = enviar_validacao(transacao, validadores, remetente, recebedor)
 
         # Retornar o status final da transação
         return jsonify({"id": transacao.id, "status": status_final})
@@ -326,7 +329,6 @@ def CriaTransacao(rem, reb, valor):
     except Exception as e:
         app.logger.error(f"Erro ao criar transação: {e}")
         return jsonify({"message": "Erro ao criar transação"}), 500
-
 
 
 @app.route('/transacoes/<int:id>/<int:status>', methods=["POST"])
@@ -352,15 +354,22 @@ def enviar_validacao(transacao, validadores, rem, rec):
     try:
         respostas = []
         for seletor in validadores:
-            url = f'http://{seletor.ip}:5000/transacoes/validar'
+            url = f'http://127.0.0.1:5000/transacoes/validar'
             try:
-                response = requests.post(url,
-                                         json={"id": transacao.id,
-                                               "remetente_id": rem,
-                                               "recebedor_id": rec,
-                                               "valor": transacao.valor,
-                                               "status": STATUS_TRANSACAO_CONCLUIDA,
-                                               "horario": transacao.horario.isoformat()})
+                if rem.qtdMoeda >= transacao.valor:
+                    response = requests.post(url,
+                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
+                                                   "valor": transacao.valor,
+                                                   "status": STATUS_TRANSACAO_CONCLUIDA,
+                                                   "horario": transacao.horario.isoformat()})
+                    if response.status_code == 200:
+                        respostas.append(response.json())
+                else:
+                    response = requests.post(url,
+                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
+                                                   "valor": transacao.valor,
+                                                   "status": STATUS_NAO_APROVADA,
+                                                   "horario": transacao.horario.isoformat()})
                 if response.status_code == 200:
                     respostas.append(response.json())
             except Exception as e:
@@ -372,8 +381,8 @@ def enviar_validacao(transacao, validadores, rem, rec):
         # Decidir o status da transação com base nas validações
         if validacoes_positivas >= 2:
             transacao.status = STATUS_TRANSACAO_CONCLUIDA
-            transacao.remetente.qtdMoeda -= transacao.valor
-            transacao.recebedor.qtdMoeda += transacao.valor
+            rem.qtdMoeda -= transacao.valor
+            rec.qtdMoeda += transacao.valor
         else:
             transacao.status = STATUS_NAO_APROVADA
 
@@ -385,13 +394,13 @@ def enviar_validacao(transacao, validadores, rem, rec):
         return STATUS_NAO_APROVADA
 
 
-
 @app.route('/transacoes/<int:id>', methods=['GET'])
 def VerificarStatusTransacao(id):
     transacao = Transacao.query.get(id)
     if transacao is None:
         return jsonify({"message": "Transação não encontrada"}), 404
     return jsonify({"status": transacao.status})
+
 
 '''
 @app.route('/transacoes/<int:id>/<int:status>', methods=["POST"])
@@ -412,6 +421,8 @@ def EditaTransacao(id, status):
     else:
         return jsonify(['Method Not Allowed'])
 '''
+
+
 @app.route('/transacoes/validar', methods=['POST'])
 def validar_transacao():
     data = request.get_json()
