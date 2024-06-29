@@ -6,7 +6,7 @@ sys.path.append(os.path.dirname(os.getcwd()))
 import random
 import threading
 
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dataclasses import dataclass
@@ -26,7 +26,7 @@ migrate = Migrate(app, db)
 class Cliente(db.Model):
     id: int
     nome: str
-    senha: int
+    senha: str
     qtdMoeda: int
 
     id = db.Column(db.Integer, primary_key=True)
@@ -63,19 +63,35 @@ class Transacao(db.Model):
     status = db.Column(db.Integer, unique=False, nullable=False)
 
 
+@dataclass
+class Validador(db.Model):
+    id: int
+    nome: str
+    saldo: int
+    flags: int
+    hold: int
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(20), unique=False, nullable=False)
+    chave_unica = db.Column(db.String(50), unique=True, nullable=False)
+    saldo = db.Column(db.Integer, nullable=False, default=50)
+    flags = db.Column(db.Integer, nullable=False, default=0)
+    hold = db.Column(db.Integer, nullable=False, default=0)
+
+
 with app.app_context():
     db.create_all()
 
 
 @app.route("/")
 def index():
-    return jsonify(['API sem interface do banco!'])
+    return jsonify({'message': 'API sem interface do banco!'})
 
 
 @app.route('/cliente', methods=['GET'])
 def ListarCliente():
     clientes = Cliente.query.all()
-    return jsonify(clientes)
+    return jsonify([cliente.__dict__ for cliente in clientes])
 
 
 @app.route('/cliente/<string:nome>/<string:senha>/<int:qtdMoeda>', methods=['POST'])
@@ -84,18 +100,20 @@ def InserirCliente(nome, senha, qtdMoeda):
         objeto = Cliente(nome=nome, senha=senha, qtdMoeda=qtdMoeda)
         db.session.add(objeto)
         db.session.commit()
-        return jsonify(objeto)
+        return jsonify(objeto.__dict__)
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/cliente/<int:id>', methods=['GET'])
 def UmCliente(id):
-    if (request.method == 'GET'):
+    if request.method == 'GET':
         objeto = Cliente.query.get(id)
-        return jsonify(objeto)
+        if not objeto:
+            return jsonify({"message": "Cliente não encontrado"}), 404
+        return jsonify(objeto.__dict__)
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/cliente/<int:id>/<int:qtdMoedas>', methods=["POST"])
@@ -120,25 +138,22 @@ def EditarCliente(id, qtdMoedas):
 
 @app.route('/cliente/<int:id>', methods=['DELETE'])
 def ApagarCliente(id):
-    if (request.method == 'DELETE'):
+    if request.method == 'DELETE':
         objeto = Cliente.query.get(id)
+        if not objeto:
+            return jsonify({"message": "Cliente não encontrado"}), 404
         db.session.delete(objeto)
         db.session.commit()
-
-        data = {
-            "message": "Cliente Deletado com Sucesso"
-        }
-
-        return jsonify(data)
+        return jsonify({"message": "Cliente Deletado com Sucesso"})
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/seletor', methods=['GET'])
 def ListarSeletor():
-    if (request.method == 'GET'):
-        produtos = Seletor.query.all()
-        return jsonify(produtos)
+    if request.method == 'GET':
+        seletores = Seletor.query.all()
+        return jsonify([seletor.__dict__ for seletor in seletores])
 
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
@@ -147,18 +162,20 @@ def InserirSeletor(nome, ip):
         objeto = Seletor(nome=nome, ip=ip)
         db.session.add(objeto)
         db.session.commit()
-        return jsonify(objeto)
+        return jsonify(objeto.__dict__)
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/seletor/<int:id>', methods=['GET'])
 def UmSeletor(id):
-    if (request.method == 'GET'):
-        produto = Seletor.query.get(id)
-        return jsonify(produto)
+    if request.method == 'GET':
+        seletor = Seletor.query.get(id)
+        if not seletor:
+            return jsonify({"message": "Seletor não encontrado"}), 404
+        return jsonify(seletor.__dict__)
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/seletor/<int:id>/<string:nome>/<string:ip>', methods=["POST"])
@@ -166,36 +183,33 @@ def EditarSeletor(id, nome, ip):
     if request.method == 'POST':
         try:
             seletor = Seletor.query.filter_by(id=id).first()
-            if seletor is None:
+            if not seletor:
                 return jsonify({"message": "Seletor não encontrado"}), 404
 
             seletor.nome = nome
             seletor.ip = ip
             db.session.commit()
-            return jsonify(seletor)
+            return jsonify(seletor.__dict__)
         except Exception as e:
             data = {
                 "message": f"Atualização não realizada; {e}",
             }
-            return jsonify(data)
+            return jsonify(data), 500
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/seletor/<int:id>', methods=['DELETE'])
 def ApagarSeletor(id):
-    if (request.method == 'DELETE'):
-        objeto = Seletor.query.get(id)
-        db.session.delete(objeto)
+    if request.method == 'DELETE':
+        seletor = Seletor.query.get(id)
+        if not seletor:
+            return jsonify({"message": "Seletor não encontrado"}), 404
+        db.session.delete(seletor)
         db.session.commit()
-
-        data = {
-            "message": "Validador Deletado com Sucesso"
-        }
-
-        return jsonify(data)
+        return jsonify({"message": "Seletor Deletado com Sucesso"})
     else:
-        return jsonify(['Method Not Allowed'])
+        return jsonify({'message': 'Method Not Allowed'}), 405
 
 
 @app.route('/hora', methods=['GET'])
@@ -206,15 +220,10 @@ def horario():
 
 @app.route('/transacoes', methods=['GET'])
 def ListarTransacoes():
-    if (request.method == 'GET'):
+    if request.method == 'GET':
         transacoes = Transacao.query.all()
-        return jsonify(transacoes)
-    
+        return jsonify([transacao.__dict__ for transacao in transacoes])
 
-
-
-
-'''
 
 @app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
 def CriaTransacao(rem, reb, valor):
@@ -243,114 +252,22 @@ def CriaTransacao(rem, reb, valor):
         db.session.commit()
 
         # Obter os validadores
-        seletores = Seletor.query.all()
-        validadores = random.sample(seletores, min(3, len(seletores)))
+        validadores = Seletor.query.all()
+
+        # Esperar até que pelo menos três validadores estejam disponíveis, ou até um minuto
+        tempo_limite = datetime.now() + timedelta(minutes=1)
+        while len(validadores) < 3 and datetime.now() < tempo_limite:
+            app.logger.info(
+                f"Esperando validadores. Tempo restante: {(tempo_limite - datetime.now()).seconds} segundos")
+            validadores = Seletor.query.all()
+
+        if len(validadores) < 3:
+            return jsonify({"message": "Não há validadores suficientes disponíveis"}), 503
+
+        validadores_selecionados = random.sample(validadores, min(3, len(validadores)))
 
         # Chamar a função de validação com os IDs do remetente e recebedor
-        status_final = enviar_validacao(transacao, validadores, remetente, recebedor)
-
-        # Retornar o status final da transação
-        return jsonify({"id": transacao.id, "status": status_final})
-
-    except Exception as e:
-        app.logger.error(f"Erro ao criar transação: {e}")
-        return jsonify({"message": "Erro ao criar transação"}), 500
-
-
-@app.route('/transacoes/<int:id>/<int:status>', methods=["POST"])
-def EditaTransacao(id, status):
-    try:
-        transacao = Transacao.query.filter_by(id=id).first()
-        if not transacao:
-            return jsonify({"message": "Transação não encontrada"}), 404
-
-        transacao.status = status
-        db.session.commit()
-
-        # Chamando a função de validação
-        status_final = enviar_validacao(transacao)
-        return jsonify({"id": transacao.id, "status": status_final})
-
-    except Exception as e:
-        app.logger.error(f"Erro ao editar transação: {e}")
-        return jsonify({"message": "Erro ao editar transação"}), 500
-
-
-def enviar_validacao(transacao, validadores, rem, rec):
-    try:
-        respostas = []
-        for seletor in validadores:
-            url = f'http://127.0.0.1:5000/transacoes/validar'
-            try:
-                if rem.qtdMoeda >= transacao.valor:
-                    response = requests.post(url,
-                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
-                                                   "valor": transacao.valor,
-                                                   "status": STATUS_TRANSACAO_CONCLUIDA,
-                                                   "horario": transacao.horario.isoformat()})
-                    if response.status_code == 200:
-                        respostas.append(response.json())
-                else:
-                    response = requests.post(url,
-                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
-                                                   "valor": transacao.valor,
-                                                   "status": STATUS_NAO_APROVADA,
-                                                   "horario": transacao.horario.isoformat()})
-                if response.status_code == 200:
-                    respostas.append(response.json())
-            except Exception as e:
-                app.logger.error(f"Erro ao enviar transação para o seletor {seletor.ip}: {e}")
-
-        # Contar validações positivas
-        validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
-
-        # Decidir o status da transação com base nas validações
-        if validacoes_positivas >= 2:
-            transacao.status = STATUS_TRANSACAO_CONCLUIDA
-            rem.qtdMoeda -= transacao.valor
-            rec.qtdMoeda += transacao.valor
-        else:
-            transacao.status = STATUS_NAO_APROVADA
-
-        db.session.commit()
-        return transacao.status
-
-    except Exception as e:
-        app.logger.error(f"Erro ao validar transação: {e}")
-        return STATUS_NAO_APROVADA
-'''
-@app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
-def CriaTransacao(rem, reb, valor):
-    try:
-        remetente = Cliente.query.get(rem)
-        recebedor = Cliente.query.get(reb)
-
-        if not remetente:
-            return jsonify({"message": "Remetente não encontrado"}), 404
-        if not recebedor:
-            return jsonify({"message": "Recebedor não encontrado"}), 404
-
-        if remetente.qtdMoeda < valor:
-            return jsonify({"message": "Saldo insuficiente"}), 400
-
-        um_minuto_atras = datetime.now() - timedelta(minutes=1)
-        transacoes_recentes = Transacao.query.filter(Transacao.remetente == rem,
-                                                     Transacao.horario >= um_minuto_atras).count()
-
-        if transacoes_recentes >= 10:
-            return jsonify({"message": "Limite de transações por minuto excedido"}), 429
-
-        transacao = Transacao(remetente=rem, recebedor=reb, valor=valor, status=STATUS_NAO_EXECUTADA,
-                              horario=datetime.now())
-        db.session.add(transacao)
-        db.session.commit()
-
-        # Obter os validadores
-        seletores = Seletor.query.all()
-        validadores = random.sample(seletores, min(3, len(seletores)))
-
-        # Chamar a função de validação com os IDs do remetente e recebedor
-        status_final = enviar_validacao(transacao, validadores, remetente, recebedor)
+        status_final = enviar_validacao(transacao, validadores_selecionados, remetente, recebedor)
 
         # Retornar o status final da transação
         return jsonify({"id": transacao.id, "status": status_final})
@@ -393,32 +310,17 @@ def EditaTransacao(id, status):
 def enviar_validacao(transacao, validadores, rem, rec):
     try:
         respostas = []
-        for seletor in validadores:
-            url = f'http://127.0.0.1:5000/transacoes/validar'
-            try:
-                if rem.qtdMoeda >= transacao.valor:
-                    response = requests.post(url,
-                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
-                                                   "valor": transacao.valor,
-                                                   "status": STATUS_TRANSACAO_CONCLUIDA,
-                                                   "horario": transacao.horario.isoformat()})
-                    if response.status_code == 200:
-                        respostas.append(response.json())
-                else:
-                    response = requests.post(url,
-                                             json={"id": transacao.id, "remetente": rem.id, "recebedor": rec.id,
-                                                   "valor": transacao.valor,
-                                                   "status": STATUS_NAO_APROVADA,
-                                                   "horario": transacao.horario.isoformat()})
-                if response.status_code == 200:
-                    respostas.append(response.json())
-            except Exception as e:
-                app.logger.error(f"Erro ao enviar transação para o seletor {seletor.ip}: {e}")
+        for validador in validadores:
+            status = validador.validar_transacao(transacao)
+            respostas.append({"validador_id": validador.id, "status": status})
+
+            if status == STATUS_NAO_APROVADA:
+                validador.atualizar_flags("Transação não aprovada")
 
         # Contar validações positivas
         validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
 
-        # Decidir o status da transação com base nas validações
+        # Decidir o status final da transação com base nas validações
         if validacoes_positivas >= 2:
             transacao.status = STATUS_TRANSACAO_CONCLUIDA
             rem.qtdMoeda -= transacao.valor
@@ -430,34 +332,51 @@ def enviar_validacao(transacao, validadores, rem, rec):
         return transacao.status
 
     except Exception as e:
-        app.logger.error(f"Erro ao validar transação: {e}")
+        db.session.rollback()
         return STATUS_NAO_APROVADA
 
 
 @app.route('/transacoes/<int:id>', methods=['GET'])
 def VerificarStatusTransacao(id):
     transacao = Transacao.query.get(id)
-    if transacao is None:
+    if not transacao:
         return jsonify({"message": "Transação não encontrada"}), 404
     return jsonify({"status": transacao.status})
 
 
+@app.route('/validador/cadastrar', methods=['POST'])
+def cadastrar_validador():
+    data = request.get_json()
+    nome = data.get('nome')
+    chave_unica = data.get('chave_unica')
 
-@app.route('/transacoes/validar', methods=['POST'])
+    if not nome or not chave_unica:
+        return jsonify({"message": "Dados incompletos"}), 400
+
+    validador = Validador(nome=nome, chave_unica=chave_unica)
+    db.session.add(validador)
+    db.session.commit()
+
+    return jsonify({"message": "Validador cadastrado com sucesso", "id": validador.id}), 201
+
+
+# Exemplo de rota para validação de transação por um Validador específico
+@app.route('/validador/validar', methods=['POST'])
 def validar_transacao():
     data = request.get_json()
-    if data['valor'] > 0:  # Simulação de uma validação baseada no valor da transação
-        return jsonify({"status": STATUS_TRANSACAO_CONCLUIDA})
-    else:
-        return jsonify({"status": STATUS_NAO_APROVADA})
+    id_validador = data.get('id_validador')
+    id_transacao = data.get('id_transacao')
 
+    validador = Validador.query.get(id_validador)
+    transacao = Transacao.query.get(id_transacao)
 
-'''@app.errorhandler(404)
-def page_not_found(error):
-    return render_template('page_not_found.html'), 404'''
+    if not validador or not transacao:
+        return jsonify({"message": "Validador ou transação não encontrados"}), 404
+
+    status = validador.validar_transacao(transacao)
+
+    return jsonify({"status": status})
+
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-
-app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=True)
