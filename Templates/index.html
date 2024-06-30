@@ -1,12 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{url_for('static' , filename='style.css')}}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Gerenciamento de Clientes e Transações</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1> Teste do Render </h1>    
+    <h1>Gerenciamento de Clientes e Transações</h1>
+
+    <section>
+        <h2>Clientes</h2>
+        <form id="clienteForm">
+            <input type="text" id="clienteNome" placeholder="Nome" required>
+            <input type="password" id="clienteSenha" placeholder="Senha" required>
+            <input type="number" id="clienteMoedas" placeholder="Quantidades de Moedas" required>
+            <button type="submit">Adicionar Cliente</button>
+        </form>
+        <ul id="clientesList"></ul>
+    </section>
+
+    <section>
+        <h2>Seletores</h2>
+        <form id="seletorForm">
+            <input type="text" id="seletorNome" placeholder="Nome" required>
+            <input type="text" id="seletorIP" placeholder="IP" required>
+            <button type="submit">Adicionar Seletor</button>
+        </form>
+        <ul id="seletorList"></ul>
+    </section>
+
+    <section>
+        <h2>Transações</h2>
+        <form id="transacaoForm">
+            <input type="text" id="transacaoRemetente" placeholder="Remetente" required>
+            <input type="text" id="transacaoRecebedor" placeholder="Recebedor" required>
+            <input type="number" id="transacaoValor" placeholder="Valor da Transação" required>
+            <button type="submit">Adicionar Transação</button>
+        </form>
+        <ul id="transacoesList"></ul>
+    </section>
+
+    <script src="scripts.js"></script>
 </body>
 </html>
