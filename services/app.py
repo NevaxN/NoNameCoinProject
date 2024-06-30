@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.getcwd()))
 
 import random
 import threading
-
+from time import sleep
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -70,6 +70,9 @@ class Validador(db.Model):
     saldo: int
     flags: int
     hold: int
+    chave_unica: str
+    selecoes_consecutivas: int
+    transacoes_coerentes: int
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(20), unique=False, nullable=False)
@@ -77,6 +80,8 @@ class Validador(db.Model):
     saldo = db.Column(db.Integer, nullable=False, default=50)
     flags = db.Column(db.Integer, nullable=False, default=0)
     hold = db.Column(db.Integer, nullable=False, default=0)
+    selecoes_consecutivas = db.Column(db.Integer, nullable=False, default=0)
+    transacoes_coerentes = db.Column(db.Integer, nullable=False, default=0)
 
 
 with app.app_context():
@@ -241,9 +246,9 @@ def CriaTransacao(rem, reb, valor):
 
         um_minuto_atras = datetime.now() - timedelta(minutes=1)
         transacoes_recentes = Transacao.query.filter(Transacao.remetente == rem,
-                                                     Transacao.horario >= um_minuto_atras).count()
+                                             Transacao.horario >= um_minuto_atras).count()
 
-        if transacoes_recentes >= 10:
+        if transacoes_recentes >= 100:
             return jsonify({"message": "Limite de transações por minuto excedido"}), 429
 
         transacao = Transacao(remetente=rem, recebedor=reb, valor=valor, status=STATUS_NAO_EXECUTADA,
@@ -259,12 +264,13 @@ def CriaTransacao(rem, reb, valor):
         while len(validadores) < 3 and datetime.now() < tempo_limite:
             app.logger.info(
                 f"Esperando validadores. Tempo restante: {(tempo_limite - datetime.now()).seconds} segundos")
+            sleep(1)
             validadores = Seletor.query.all()
 
         if len(validadores) < 3:
             return jsonify({"message": "Não há validadores suficientes disponíveis"}), 503
 
-        validadores_selecionados = random.sample(validadores, min(3, len(validadores)))
+        validadores_selecionados = random.choices(validadores, k=3)
 
         # Chamar a função de validação com os IDs do remetente e recebedor
         status_final = enviar_validacao(transacao, validadores_selecionados, remetente, recebedor)
@@ -316,6 +322,8 @@ def enviar_validacao(transacao, validadores, rem, rec):
 
             if status == STATUS_NAO_APROVADA:
                 validador.atualizar_flags("Transação não aprovada")
+            elif validador.chave_unica != transacao.chave_unica:
+                return jsonify({"message": "Chave única do validador inválida"}), 400
 
         # Contar validações positivas
         validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
@@ -360,7 +368,6 @@ def cadastrar_validador():
     return jsonify({"message": "Validador cadastrado com sucesso", "id": validador.id}), 201
 
 
-# Exemplo de rota para validação de transação por um Validador específico
 @app.route('/validador/validar', methods=['POST'])
 def validar_transacao():
     data = request.get_json()
