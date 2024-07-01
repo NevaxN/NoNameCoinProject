@@ -4,14 +4,13 @@ import os
 sys.path.append(os.path.dirname(os.getcwd()))
 
 import random
-import threading
 from time import sleep
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import requests
+from string import ascii_letters
 
 from util.status_transacao import STATUS_TRANSACAO_CONCLUIDA, STATUS_NAO_APROVADA, STATUS_NAO_EXECUTADA
 
@@ -20,6 +19,8 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
+CHAVES = {}
 
 
 @dataclass
@@ -83,7 +84,7 @@ class Validador(db.Model):
     hold = db.Column(db.Integer, nullable=False, default=0)
     selecoes_consecutivas = db.Column(db.Integer, nullable=False, default=0)
     transacoes_coerentes = db.Column(db.Integer, nullable=False, default=0)
-    horario_ultima_transacao = db.Column(db.DateTime, unique=False, nullable=False)
+    horario_ultima_transacao = db.Column(db.DateTime, unique=False, nullable=False, default=datetime.now())
 
 
 with app.app_context():
@@ -160,7 +161,7 @@ def ApagarCliente(id):
 def ListarSeletor():
     if request.method == 'GET':
         seletores = Seletor.query.all()
-        return jsonify({"Seletores:" : seletores})
+        return jsonify({"Seletores:": seletores})
 
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
@@ -248,7 +249,7 @@ def CriaTransacao(rem, reb, valor):
 
         um_minuto_atras = datetime.now() - timedelta(minutes=1)
         transacoes_recentes = Transacao.query.filter(Transacao.remetente == rem,
-                                             Transacao.horario >= um_minuto_atras).count()
+                                                     Transacao.horario >= um_minuto_atras).count()
 
         if transacoes_recentes >= 100:
             return jsonify({"message": "Limite de transações por minuto excedido"}), 429
@@ -259,7 +260,7 @@ def CriaTransacao(rem, reb, valor):
         db.session.commit()
 
         # Obter os validadores, ordenando por flags e saldo
-        validadores = Seletor.query.order_by(Seletor.flags.asc(), Seletor.saldo.desc()).all()
+        validadores = Validador.query.order_by(Validador.flags.asc(), Validador.saldo.desc()).all()
 
         # Esperar até que pelo menos três validadores estejam disponíveis, ou até um minuto
         tempo_limite = datetime.now() + timedelta(minutes=1)
@@ -267,7 +268,7 @@ def CriaTransacao(rem, reb, valor):
             app.logger.info(
                 f"Esperando validadores. Tempo restante: {(tempo_limite - datetime.now()).seconds} segundos")
             sleep(1)
-            validadores = Seletor.query.order_by(Seletor.flags.asc(), Seletor.saldo.desc()).all()
+            validadores = Validador.query.order_by(Validador.flags.asc(), Validador.saldo.desc()).all()
 
         if len(validadores) < 3:
             return jsonify({"message": "Não há validadores suficientes disponíveis"}), 503
@@ -321,17 +322,22 @@ def enviar_validacao(transacao, validadores, rem, rec):
     try:
         respostas = []
         recompensa = 10  # Define a recompensa para cada validador
+        manter_chave_cheia()
 
         for validador in validadores:
             status = 0
             # Regras de validação
-            if not (transacao.valor > 0 and transacao.valor <= rem.qtdMoeda):
+            if transacao.valor >= rem.qtdMoeda:
+                print("Não Aprovada Valor")
                 status = STATUS_NAO_APROVADA
-            elif validador.chave_unica != transacao.chave_unica:
+            elif validador.chave_unica != CHAVES[str(validador.id)]:
+                print("Não Aprovada Chave Unica")
                 status = STATUS_NAO_APROVADA
             elif validador.saldo < 100:  # Exemplo de saldo mínimo
+                print("Não Aprovada Saldo")
                 status = STATUS_NAO_APROVADA
-            elif datetime.now().hour < 9 or datetime.now().hour > 18:  # Exemplo de horário de operação
+            elif validador.horario_ultima_transacao > transacao.horario > datetime.now():  # Exemplo de horário de operação
+                print("Não Aprovada Hora")
                 status = STATUS_NAO_APROVADA
             else:
                 status = STATUS_TRANSACAO_CONCLUIDA
@@ -349,11 +355,11 @@ def enviar_validacao(transacao, validadores, rem, rec):
                 validador.saldo += recompensa
                 db.session.commit()
 
-            validador.escolhas_consecutivas += 1
-            if validador.escolhas_consecutivas > 5:
-                validador.escolhas_consecutivas = 0
-                validador.hold_ate = datetime.now() + timedelta(minutes=5)
-                db.session.commit()
+            # validador.escolhas_consecutivas += 1
+            # if validador.escolhas_consecutivas > 5:
+            #     validador.escolhas_consecutivas = 0
+            #     validador.hold_ate = datetime.now() + timedelta(minutes=5)
+            #     db.session.commit()
 
         aprovacoes = sum(1 for r in respostas if r["status"] == STATUS_TRANSACAO_CONCLUIDA)
         status_final = STATUS_TRANSACAO_CONCLUIDA if aprovacoes >= 2 else STATUS_NAO_APROVADA
@@ -375,39 +381,52 @@ def VerificarStatusTransacao(id):
     return jsonify({"status": transacao.status})
 
 
-@app.route('/validador/cadastrar', methods=['POST'])
-def cadastrar_validador():
+@app.route('/validador/cadastrar/<string:nome>/<int:saldo>', methods=['POST'])
+def inserir_validador(nome, saldo):
+    saldo_minimo = 100  # Define o saldo mínimo
+    if request.method == 'POST' and nome != '' and saldo > saldo_minimo:
+        try:
+            validador = Validador()
+            chave_unica = cadastrar_chave_unica_validador(validador.id)
+            validador = Validador(nome=nome, saldo=saldo, flags=0, hold=0, chave_unica=chave_unica)
+            db.session.add(validador)
+            db.session.commit()
+            return jsonify({"id": validador.id})
+        except Exception as e:
+            app.logger.error(f"Erro ao criar validador: {e}")
+            return jsonify({"message": "Erro ao criar validador"}), 500
+    elif saldo < saldo_minimo:
+        return jsonify({"message": "Saldo insuficiente para registrar como validador"}), 400
+    else:
+        return jsonify({'message': 'Method Not Allowed'}), 405
+
+
+@app.route('/validador', methods=['GET'])
+def ListarValidadores():
+    if request.method == 'GET':
+        validadores = Validador.query.all()
+        return jsonify({"Validadores:": validadores})
+
+
+def cadastrar_chave_unica_validador(validador_id):
+    from random import randint
     try:
-        data = request.json
-        saldo_minimo = 100 # Define o saldo mínimo
-        
-        if data['saldo'] < saldo_minimo:
-            return jsonify({"message": "Saldo insuficiente para registrar como validador"}), 400
-        
-        validador = Seletor(nome=data['nome'], saldo=data['saldo'], qtdMoeda=data['qtdMoeda'], flags=0)
-        db.session.add(validador)
-        db.session.commit()
-        return jsonify({"id": validador.id})
+        letras = ascii_letters
+        chave_unica = ''
+        for i in range(10):
+            chave_unica += letras[randint(0, len(letras))]
+        CHAVES[str(validador_id)] = chave_unica
+        return chave_unica
     except Exception as e:
-        app.logger.error(f"Erro ao criar validador: {e}")
-        return jsonify({"message": "Erro ao criar validador"}), 500
+        app.logger.error(f"Erro ao criar chave: {e}")
+        return jsonify({"message": "Erro ao criar chave"}), 500
 
 
-@app.route('/validador/validar', methods=['POST'])
-def validar_transacao():
-    data = request.get_json()
-    id_validador = data.get('id_validador')
-    id_transacao = data.get('id_transacao')
+def manter_chave_cheia():
+    validadores = Validador.query.all()
 
-    validador = Validador.query.get(id_validador)
-    transacao = Transacao.query.get(id_transacao)
-
-    if not validador or not transacao:
-        return jsonify({"message": "Validador ou transação não encontrados"}), 404
-
-    status = validador.validar_transacao(transacao)
-
-    return jsonify({"status": status})
+    for validador in validadores:
+        CHAVES[str(validador.id)] = validador.chave_unica
 
 
 if __name__ == "__main__":
