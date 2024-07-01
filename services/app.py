@@ -73,6 +73,7 @@ class Validador(db.Model):
     chave_unica: str
     selecoes_consecutivas: int
     transacoes_coerentes: int
+    horario_ultima_transacao: datetime
 
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(20), unique=False, nullable=False)
@@ -82,6 +83,7 @@ class Validador(db.Model):
     hold = db.Column(db.Integer, nullable=False, default=0)
     selecoes_consecutivas = db.Column(db.Integer, nullable=False, default=0)
     transacoes_coerentes = db.Column(db.Integer, nullable=False, default=0)
+    horario_ultima_transacao = db.Column(db.DateTime, unique=False, nullable=False)
 
 
 with app.app_context():
@@ -96,7 +98,7 @@ def index():
 @app.route('/cliente', methods=['GET'])
 def ListarCliente():
     clientes = Cliente.query.all()
-    return jsonify([cliente.__dict__ for cliente in clientes])
+    return jsonify({"Clientes": clientes})
 
 
 @app.route('/cliente/<string:nome>/<string:senha>/<int:qtdMoeda>', methods=['POST'])
@@ -105,7 +107,7 @@ def InserirCliente(nome, senha, qtdMoeda):
         objeto = Cliente(nome=nome, senha=senha, qtdMoeda=qtdMoeda)
         db.session.add(objeto)
         db.session.commit()
-        return jsonify(objeto.__dict__)
+        return jsonify({"Cliente": objeto})
     else:
         return jsonify({'message': 'Method Not Allowed'}), 405
 
@@ -116,7 +118,7 @@ def UmCliente(id):
         objeto = Cliente.query.get(id)
         if not objeto:
             return jsonify({"message": "Cliente não encontrado"}), 404
-        return jsonify(objeto.__dict__)
+        return jsonify({"Cliente": objeto})
     else:
         return jsonify({'message': 'Method Not Allowed'}), 405
 
@@ -158,7 +160,7 @@ def ApagarCliente(id):
 def ListarSeletor():
     if request.method == 'GET':
         seletores = Seletor.query.all()
-        return jsonify([seletor.__dict__ for seletor in seletores])
+        return jsonify({"Seletores:" : seletores})
 
 
 @app.route('/seletor/<string:nome>/<string:ip>', methods=['POST'])
@@ -167,7 +169,7 @@ def InserirSeletor(nome, ip):
         objeto = Seletor(nome=nome, ip=ip)
         db.session.add(objeto)
         db.session.commit()
-        return jsonify(objeto.__dict__)
+        return jsonify({"Seletor:": objeto})
     else:
         return jsonify({'message': 'Method Not Allowed'}), 405
 
@@ -178,7 +180,7 @@ def UmSeletor(id):
         seletor = Seletor.query.get(id)
         if not seletor:
             return jsonify({"message": "Seletor não encontrado"}), 404
-        return jsonify(seletor.__dict__)
+        return jsonify({"Seletor:": seletor})
     else:
         return jsonify({'message': 'Method Not Allowed'}), 405
 
@@ -194,7 +196,7 @@ def EditarSeletor(id, nome, ip):
             seletor.nome = nome
             seletor.ip = ip
             db.session.commit()
-            return jsonify(seletor.__dict__)
+            return jsonify({"Seletor:": seletor})
         except Exception as e:
             data = {
                 "message": f"Atualização não realizada; {e}",
@@ -227,7 +229,7 @@ def horario():
 def ListarTransacoes():
     if request.method == 'GET':
         transacoes = Transacao.query.all()
-        return jsonify([transacao.__dict__ for transacao in transacoes])
+        return jsonify({"Transações:": transacoes})
 
 
 @app.route('/transacoes/<int:rem>/<int:reb>/<int:valor>', methods=['POST'])
@@ -317,7 +319,8 @@ def enviar_validacao(transacao, validadores, rem, rec):
     try:
         respostas = []
         for validador in validadores:
-            status = validador.validar_transacao(transacao)
+            status = 0
+            #status = validador.validar_transacao(transacao, validador)
             respostas.append({"validador_id": validador.id, "status": status})
 
             if status == STATUS_NAO_APROVADA:
