@@ -258,8 +258,8 @@ def CriaTransacao(rem, reb, valor):
         db.session.add(transacao)
         db.session.commit()
 
-        # Obter os validadores
-        validadores = Seletor.query.all()
+        # Obter os validadores, ordenando por flags e saldo
+        validadores = Seletor.query.order_by(Seletor.flags.asc(), Seletor.saldo.desc()).all()
 
         # Esperar até que pelo menos três validadores estejam disponíveis, ou até um minuto
         tempo_limite = datetime.now() + timedelta(minutes=1)
@@ -267,12 +267,14 @@ def CriaTransacao(rem, reb, valor):
             app.logger.info(
                 f"Esperando validadores. Tempo restante: {(tempo_limite - datetime.now()).seconds} segundos")
             sleep(1)
-            validadores = Seletor.query.all()
+            validadores = Seletor.query.order_by(Seletor.flags.asc(), Seletor.saldo.desc()).all()
 
         if len(validadores) < 3:
             return jsonify({"message": "Não há validadores suficientes disponíveis"}), 503
 
-        validadores_selecionados = random.choices(validadores, k=3)
+        # Limitar a seleção a 20% do total de validadores
+        max_validadores = max(3, int(len(validadores) * 0.2))
+        validadores_selecionados = random.choices(validadores, k=min(3, max_validadores))
 
         # Chamar a função de validação com os IDs do remetente e recebedor
         status_final = enviar_validacao(transacao, validadores_selecionados, remetente, recebedor)
@@ -318,33 +320,51 @@ def EditaTransacao(id, status):
 def enviar_validacao(transacao, validadores, rem, rec):
     try:
         respostas = []
+        recompensa = 10  # Define a recompensa para cada validador
+
         for validador in validadores:
             status = 0
-            #status = validador.validar_transacao(transacao, validador)
+            # Regras de validação
+            if not (transacao.valor > 0 and transacao.valor <= rem.qtdMoeda):
+                status = STATUS_NAO_APROVADA
+            elif validador.chave_unica != transacao.chave_unica:
+                status = STATUS_NAO_APROVADA
+            elif validador.saldo < 100:  # Exemplo de saldo mínimo
+                status = STATUS_NAO_APROVADA
+            elif datetime.now().hour < 9 or datetime.now().hour > 18:  # Exemplo de horário de operação
+                status = STATUS_NAO_APROVADA
+            else:
+                status = STATUS_TRANSACAO_CONCLUIDA
+
             respostas.append({"validador_id": validador.id, "status": status})
 
             if status == STATUS_NAO_APROVADA:
-                validador.atualizar_flags("Transação não aprovada")
-            elif validador.chave_unica != transacao.chave_unica:
-                return jsonify({"message": "Chave única do validador inválida"}), 400
+                validador.flags += 1
+                if validador.flags > 5:
+                    db.session.delete(validador)
+                    db.session.commit()
+                else:
+                    db.session.commit()
+            else:
+                validador.saldo += recompensa
+                db.session.commit()
 
-        # Contar validações positivas
-        validacoes_positivas = sum(1 for resp in respostas if resp.get('status') == STATUS_TRANSACAO_CONCLUIDA)
+            validador.escolhas_consecutivas += 1
+            if validador.escolhas_consecutivas > 5:
+                validador.escolhas_consecutivas = 0
+                validador.hold_ate = datetime.now() + timedelta(minutes=5)
+                db.session.commit()
 
-        # Decidir o status final da transação com base nas validações
-        if validacoes_positivas >= 2:
-            transacao.status = STATUS_TRANSACAO_CONCLUIDA
-            rem.qtdMoeda -= transacao.valor
-            rec.qtdMoeda += transacao.valor
-        else:
-            transacao.status = STATUS_NAO_APROVADA
+        aprovacoes = sum(1 for r in respostas if r["status"] == STATUS_TRANSACAO_CONCLUIDA)
+        status_final = STATUS_TRANSACAO_CONCLUIDA if aprovacoes >= 2 else STATUS_NAO_APROVADA
 
+        transacao.status = status_final
         db.session.commit()
-        return transacao.status
 
+        return status_final
     except Exception as e:
-        db.session.rollback()
-        return STATUS_NAO_APROVADA
+        app.logger.error(f"Erro ao validar transação: {e}")
+        return STATUS_NAO_EXECUTADA
 
 
 @app.route('/transacoes/<int:id>', methods=['GET'])
@@ -357,18 +377,20 @@ def VerificarStatusTransacao(id):
 
 @app.route('/validador/cadastrar', methods=['POST'])
 def cadastrar_validador():
-    data = request.get_json()
-    nome = data.get('nome')
-    chave_unica = data.get('chave_unica')
-
-    if not nome or not chave_unica:
-        return jsonify({"message": "Dados incompletos"}), 400
-
-    validador = Validador(nome=nome, chave_unica=chave_unica)
-    db.session.add(validador)
-    db.session.commit()
-
-    return jsonify({"message": "Validador cadastrado com sucesso", "id": validador.id}), 201
+    try:
+        data = request.json
+        saldo_minimo = 100 # Define o saldo mínimo
+        
+        if data['saldo'] < saldo_minimo:
+            return jsonify({"message": "Saldo insuficiente para registrar como validador"}), 400
+        
+        validador = Seletor(nome=data['nome'], saldo=data['saldo'], qtdMoeda=data['qtdMoeda'], flags=0)
+        db.session.add(validador)
+        db.session.commit()
+        return jsonify({"id": validador.id})
+    except Exception as e:
+        app.logger.error(f"Erro ao criar validador: {e}")
+        return jsonify({"message": "Erro ao criar validador"}), 500
 
 
 @app.route('/validador/validar', methods=['POST'])
