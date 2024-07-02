@@ -16,9 +16,9 @@ import requests
 #response = requests.delete('http://localhost:5000/seletor/2')
 
 #criando uma transacao
-#response = requests.post('http://localhost:5000/cliente/muriel/1234/300')
+#response = requests.post('http://localhost:5000/cliente/muriel/3214/500')
 #response = requests.post('http://localhost:5000/seletor/seletor1/123.123/100')
-response = requests.post('http://localhost:5000/transacoes/1/3/150')
+response = requests.post('http://localhost:5000/transacoes/1/3/276')
 #response = requests.post('http://localhost:5000/validador/cadastrar/validador4/110')
 
 print(response.text)

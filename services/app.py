@@ -91,16 +91,17 @@ class Validador(db.Model):
     expulsoes = db.Column(db.Integer, default=0)
 
 
+@dataclass
 class EleicaoLog(db.Model):
     id: int
     timestamp: datetime
     acao: str
     detalhes: str
 
-    id = db.Column(db.Integer, primary_key=True),
-    timestamp = db.Column(db.DateTime, unique=False, default=datetime.utcnow),
-    acao = db.Column(db.String(100), unique=True, nullable=False),
-    detalhes = db.Column(db.String(250), unique=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    acao = db.Column(db.String(100), nullable=False)
+    detalhes = db.Column(db.String(250), nullable=False)
 
 
 with app.app_context():
@@ -310,9 +311,14 @@ def CriaTransacao(rem, reb, valor):
         # Selecionar os top `max_validadores` validadores
         validadores_selecionados = validadores_ordenados[:max_validadores]
 
+        registrar_log('Seleção dos validadores',
+                      f'Validadores selecionados: {[v.id for v in validadores_selecionados]}')
+
         # Exibir os validadores selecionados
         for validador in validadores_selecionados:
             print(f"Validador ID: {validador.id}, Flags: {validador.flags}, Saldo: {validador.saldo}")
+            registrar_log('Detalhes do validador selecionado',
+                          f'ID: {validador.id}, Flags: {validador.flags}, Saldo: {validador.saldo}')
 
         # Chamar a função de validação com os IDs do remetente e recebedor
         status_final = enviar_validacao(transacao, validadores_selecionados, remetente, recebedor)
@@ -368,7 +374,7 @@ def ValidarTransacaoUnica(id):
             if random.random() < chance_selecao:
                 validadores_selecionados.append(validador)
 
-        registrar_log('Início da eleição', 'Iniciando o processo de eleição dos validadores.')
+        # registrar_log('Início da eleição', 'Iniciando o processo de eleição dos validadores.')
 
         max_validadores = max(3, int(len(validadores) * 0.2))
         validadores_ordenados = sorted(validadores, key=lambda v: (v.flags, -v.saldo))
@@ -377,13 +383,13 @@ def ValidarTransacaoUnica(id):
         validadores_selecionados = validadores_ordenados[:max_validadores]
 
         registrar_log('Seleção dos validadores',
-                      f'Validadores selecionados: {[v.id for v in validadores_selecionados]}')
+        f'Validadores selecionados: {[v.id for v in validadores_selecionados]}')
 
         # Exibir os validadores selecionados
         for validador in validadores_selecionados:
             print(f"Validador ID: {validador.id}, Flags: {validador.flags}, Saldo: {validador.saldo}")
             registrar_log('Detalhes do validador selecionado',
-                          f'ID: {validador.id}, Flags: {validador.flags}, Saldo: {validador.saldo}')
+            f'ID: {validador.id}, Flags: {validador.flags}, Saldo: {validador.saldo}')
 
         # Chamar a função de validação com os IDs do remetente e recebedor
         status_final = enviar_validacao(transacao, validadores_selecionados, remetente, recebedor)
