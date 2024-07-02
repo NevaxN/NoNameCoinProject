@@ -18,7 +18,11 @@ import requests
 #criando uma transacao
 #response = requests.post('http://localhost:5000/cliente/muriel/3214/500')
 #response = requests.post('http://localhost:5000/seletor/seletor1/123.123/100')
-response = requests.post('http://localhost:5000/transacoes/1/3/276')
+from random import randint
+for i in range(10000):
+    novo_valor = randint(50, 250)
+    response = requests.post(f'http://localhost:5000/transacoes/2/3/{novo_valor}')
+    print(response.text)
 #response = requests.post('http://localhost:5000/validador/cadastrar/validador4/110')
 
-print(response.text)
+

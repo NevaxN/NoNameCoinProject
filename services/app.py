@@ -300,6 +300,9 @@ def CriaTransacao(rem, reb, valor):
             elif validador.flags == 2:
                 chance_selecao *= 0.25  # Reduz em 75% a chance de seleção
 
+            if validador.hold > 0:
+                continue  # Pula validadores em HOLD
+
             # Gerar um número aleatório entre 0 e 1 para decidir se seleciona o validador
             if random.random() < chance_selecao:
                 validadores_selecionados.append(validador)
@@ -438,8 +441,11 @@ def enviar_validacao(transacao, validadores, rem, rec):
 
             validador.selecoes_consecutivas += 1
             if validador.selecoes_consecutivas > 5:
+                validador.hold += 1  # Coloca o validador em HOLD pelas próximas 5 transações
                 validador.selecoes_consecutivas = 0
-                validador.hold_ate = datetime.now() + timedelta(minutes=5)
+                validador.hold_ate = datetime.now() + timedelta(seconds=10)
+                if validador.hold_ate == datetime.now():
+                    validador.hold = 0
                 db.session.commit()
 
         aprovacoes = sum(1 for r in respostas if r["status"] == STATUS_TRANSACAO_CONCLUIDA)
@@ -492,6 +498,8 @@ def enviar_validacao(transacao, validadores, rem, rec):
 
         transacao.status = status_final
         db.session.commit()
+
+        sincronizar_tempo()
 
         return status_final
     except Exception as e:
