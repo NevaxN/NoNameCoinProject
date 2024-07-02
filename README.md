@@ -9,11 +9,11 @@ Lucas Gabriel;
 
 
 Bibliotecas:
-random
-time
-Flask, request, jsonify
-flask_sqlalchemy 
-flask_migrate 
-dataclasses
-datetime
-string 
+random;
+time;
+Flask, request, jsonify;
+flask_sqlalchemy; 
+flask_migrate;
+dataclasses;
+datetime;
+string;
