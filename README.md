@@ -17,3 +17,4 @@ flask_migrate;
 dataclasses;
 datetime;
 string;
+Python 3.9
