@@ -569,6 +569,18 @@ def registrar_log(acao, detalhes=None):
     log = EleicaoLog(acao=acao, detalhes=detalhes)
     db.session.add(log)
     db.session.commit()
+    
+@app.route('/validador/<int:id>', methods=['DELETE'])
+def ApagarValidador(id):
+    if request.method == 'DELETE':
+        validador = Validador.query.get(id)
+        if not validador:
+            return jsonify({"message": "Validador não encontrado"}), 404
+        db.session.delete(validador)
+        db.session.commit()
+        return jsonify({"message": "Validador Deletado com Sucesso"})
+    else:
+        return jsonify({'message': 'Validador Not Allowed'}), 405
 
 
 def sincronizar_tempo():

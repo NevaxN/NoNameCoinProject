@@ -1,46 +1,64 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciamento de Clientes e Transações</title>
+    <title>API Interface</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Gerenciamento de Clientes e Transações</h1>
+    <h1>Interface da API</h1>
 
-    <section>
-        <h2>Clientes</h2>
-        <form id="clienteForm">
-            <input type="text" id="clienteNome" placeholder="Nome" required>
-            <input type="password" id="clienteSenha" placeholder="Senha" required>
-            <input type="number" id="clienteMoedas" placeholder="Quantidades de Moedas" required>
-            <button type="submit">Adicionar Cliente</button>
-        </form>
-        <ul id="clientesList"></ul>
-    </section>
+    <h2>Listar Clientes</h2>
+    <button id="listar-clientes-btn">Listar Clientes</button>
+    <ul id="clientes-lista"></ul>
 
-    <section>
-        <h2>Seletores</h2>
-        <form id="seletorForm">
-            <input type="text" id="seletorNome" placeholder="Nome" required>
-            <input type="text" id="seletorIP" placeholder="IP" required>
-            <button type="submit">Adicionar Seletor</button>
-        </form>
-        <ul id="seletorList"></ul>
-    </section>
+    <h2>Adicionar Cliente</h2>
+    <form id="adicionar-cliente-form">
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" required>
+        <label for="senha">Senha:</label>
+        <input type="password" id="senha" name="senha" required>
+        <label for="qtdMoeda">Quantidade de Moedas:</label>
+        <input type="number" id="qtdMoeda" name="qtdMoeda" required>
+        <button type="submit">Adicionar Cliente</button>
+    </form>
 
-    <section>
-        <h2>Transações</h2>
-        <form id="transacaoForm">
-            <input type="text" id="transacaoRemetente" placeholder="Remetente" required>
-            <input type="text" id="transacaoRecebedor" placeholder="Recebedor" required>
-            <input type="number" id="transacaoValor" placeholder="Valor da Transação" required>
-            <button type="submit">Adicionar Transação</button>
-        </form>
-        <ul id="transacoesList"></ul>
-    </section>
+    <h2>Editar Cliente</h2>
+    <form id="editar-cliente-form">
+        <label for="id-editar">ID:</label>
+        <input type="number" id="id-editar" name="id-editar" required>
+        <label for="nome-editar">Novo Nome:</label>
+        <input type="text" id="nome-editar" name="nome-editar" required>
+        <label for="senha-editar">Nova Senha:</label>
+        <input type="password" id="senha-editar" name="senha-editar" required>
+        <label for="qtdMoeda-editar">Nova Quantidade de Moedas:</label>
+        <input type="number" id="qtdMoeda-editar" name="qtdMoeda-editar" required>
+        <button type="submit">Editar Cliente</button>
+    </form>
 
-    <script src="scripts.js"></script>
+    <h2>Excluir Cliente</h2>
+    <form id="excluir-cliente-form">
+        <label for="id-excluir">ID:</label>
+        <input type="number" id="id-excluir" name="id-excluir" required>
+        <button type="submit">Excluir Cliente</button>
+    </form>
+
+    <h2>Listar Transações</h2>
+    <button id="listar-transacoes-btn">Listar Transações</button>
+    <ul id="transacoes-lista"></ul>
+
+    <h2>Adicionar Transação</h2>
+    <form id="adicionar-transacao-form">
+        <label for="idCliente">ID do Cliente:</label>
+        <input type="number" id="idCliente" name="idCliente" required>
+        <label for="descricao">Descrição:</label>
+        <input type="text" id="descricao" name="descricao" required>
+        <label for="valor">Valor:</label>
+        <input type="number" id="valor" name="valor" required>
+        <button type="submit">Adicionar Transação</button>
+    </form>
+
+    <script src="script.js"></script>
 </body>
 </html>
