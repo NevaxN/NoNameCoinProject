@@ -18,3 +18,5 @@ dataclasses;
 datetime;
 string;
 Python 3.9
+
+O projeto todo funciona em app.py, que está na pasta "services", deixamos alguns arquivos que estavamos usando antes, mas que com a adesão do banco disponibilizado pelo professor, não seriam mais úteis, espero que entenda
